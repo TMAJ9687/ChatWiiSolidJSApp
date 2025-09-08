@@ -72,39 +72,13 @@ const Landing: Component = () => {
     const a = age();
     const captcha = captchaToken();
     
-    // Check if CAPTCHA is required
-    const captchaRequired = import.meta.env.VITE_RECAPTCHA_SITE_KEY && 
-                           import.meta.env.VITE_RECAPTCHA_SITE_KEY !== 'your_recaptcha_site_key_here';
+    // CAPTCHA temporarily disabled for universal device compatibility
+    const captchaRequired = false; // Disabled until device compatibility issues resolved
     
-    // Enhanced CAPTCHA validation - account for different token types
-    const isCaptchaValid = !captchaRequired || (captcha !== null && captcha.length > 0);
-    
-    // Debug logging for form validation
-    const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
-    
-    console.log('🔍 Form Validation Debug:', {
-      nickname: nick,
-      nicknameValid: validation.valid,
-      gender: g,
-      age: a,
-      captchaToken: captcha,
-      captchaTokenLength: captcha?.length,
-      captchaRequired,
-      isCaptchaValid,
-      isLocalhost,
-      siteKey: import.meta.env.VITE_RECAPTCHA_SITE_KEY
-    });
+    // CAPTCHA validation disabled - always valid
+    const isCaptchaValid = true;
     
     const finalValid = validation.valid && g !== null && a !== null && isCaptchaValid;
-    
-    console.log('✅ Final validation result:', {
-      nicknameValid: validation.valid,
-      genderValid: g !== null,
-      ageValid: a !== null,
-      captchaValidForSubmission: isCaptchaValid,
-      overall: finalValid
-    });
-    
     setIsValid(finalValid);
   });
 
@@ -189,48 +163,34 @@ const Landing: Component = () => {
     setNickname(nickname);
   };
 
-  // CAPTCHA handlers with debug logging
+  // CAPTCHA handlers (disabled but kept for future use)
   const handleCaptchaVerify = (token: string) => {
-    console.log('🎯 CAPTCHA verified with token:', token);
     setCaptchaToken(token);
     setCaptchaError("");
   };
 
   const handleCaptchaExpired = () => {
-    console.log('⏰ CAPTCHA expired');
     setCaptchaToken(null);
     setCaptchaError("CAPTCHA expired. Please verify again.");
   };
 
   const handleCaptchaError = () => {
-    console.log('❌ CAPTCHA error occurred');
     setCaptchaToken(null);
     setCaptchaError("CAPTCHA verification failed. Please try again.");
   };
 
   // Handle chat start with anonymous auth
   const handleStartChat = async () => {
-    console.log('🚀 Start Chat clicked! Current validation state:', {
-      isValid: isValid(),
-      nickname: nickname(),
-      gender: gender(),
-      age: age(),
-      captchaToken: captchaToken()
-    });
-    
-    if (!isValid()) {
-      console.log('❌ Form validation failed - button should be disabled');
-      return;
-    }
+    if (!isValid()) return;
 
-    // Check CAPTCHA if required
-    const captchaRequired = import.meta.env.VITE_RECAPTCHA_SITE_KEY && 
-                           import.meta.env.VITE_RECAPTCHA_SITE_KEY !== 'your_recaptcha_site_key_here';
+    // CAPTCHA check disabled for universal device compatibility
+    // const captchaRequired = false; // Disabled until device compatibility issues resolved
     
-    if (captchaRequired && !captchaToken()) {
-      setCaptchaError("Please complete CAPTCHA verification.");
-      return;
-    }
+    // Skip CAPTCHA validation entirely
+    // if (captchaRequired && !captchaToken()) {
+    //   setCaptchaError("Please complete CAPTCHA verification.");
+    //   return;
+    // }
 
     setLoading(true);
     try {
@@ -339,8 +299,8 @@ const Landing: Component = () => {
 
             <AgeDropdown value={age()} onChange={setAge} />
 
-            {/* CAPTCHA Widget */}
-            <Show when={import.meta.env.VITE_RECAPTCHA_SITE_KEY && import.meta.env.VITE_RECAPTCHA_SITE_KEY !== 'your_recaptcha_site_key_here'}>
+            {/* CAPTCHA Widget - Temporarily disabled for device compatibility */}
+            <Show when={false}>
               <div class="space-y-2">
                 <CaptchaWidget
                   onVerify={handleCaptchaVerify}
@@ -356,10 +316,6 @@ const Landing: Component = () => {
               </div>
             </Show>
 
-            {/* Debug Info - Remove in production */}
-            <div class="text-xs text-gray-500 text-center p-2 bg-gray-50 dark:bg-gray-800 rounded">
-              Debug: Valid={isValid() ? '✅' : '❌'} | Nick={nickname() ? '✅' : '❌'} | Gender={gender() ? '✅' : '❌'} | Age={age() ? '✅' : '❌'} | CAPTCHA={captchaToken() ? '✅' : '❌'}
-            </div>
 
             {/* Start Chat Button */}
             <button
