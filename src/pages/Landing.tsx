@@ -162,8 +162,10 @@ const Landing: Component = () => {
 
   // CAPTCHA handlers
   const handleCaptchaVerify = (token: string) => {
+    console.log('Landing: CAPTCHA verify handler called with token:', token);
     setCaptchaToken(token);
     setCaptchaError("");
+    console.log('Landing: captchaToken set, checking validity...');
   };
 
   const handleCaptchaExpired = () => {

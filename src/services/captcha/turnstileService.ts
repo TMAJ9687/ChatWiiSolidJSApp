@@ -141,19 +141,26 @@ class TurnstileService {
 
     // Set up global callbacks
     window.turnstileCallback = () => {
+      console.log('Turnstile: Success callback triggered');
       const token = this.getResponse();
+      console.log('Turnstile: Retrieved token:', token);
       if (token && this.callbacks) {
+        console.log('Turnstile: Calling onSuccess with token');
         this.callbacks.onSuccess(token);
+      } else {
+        console.warn('Turnstile: No token or callbacks available');
       }
     };
 
     window.turnstileExpiredCallback = () => {
+      console.log('Turnstile: Expired callback triggered');
       if (this.callbacks) {
         this.callbacks.onExpired();
       }
     };
 
     window.turnstileErrorCallback = () => {
+      console.log('Turnstile: Error callback triggered');
       if (this.callbacks) {
         this.callbacks.onError();
       }
