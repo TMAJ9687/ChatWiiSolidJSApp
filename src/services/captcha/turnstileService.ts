@@ -160,28 +160,24 @@ class TurnstileService {
     };
 
     try {
-      await new Promise<void>((resolve) => {
-        window.turnstile!.ready(() => {
-          const element = document.getElementById(elementId);
-          if (!element) {
-            console.error(`Turnstile: Element with ID '${elementId}' not found`);
-            return;
-          }
+      const element = document.getElementById(elementId);
+      if (!element) {
+        console.error(`Turnstile: Element with ID '${elementId}' not found`);
+        return false;
+      }
 
-          this.widgetId = window.turnstile!.render(element, {
-            sitekey: this.siteKey,
-            theme: options.theme || 'light',
-            size: options.size || 'normal',
-            callback: 'turnstileCallback',
-            'expired-callback': 'turnstileExpiredCallback',
-            'error-callback': 'turnstileErrorCallback',
-            ...options,
-          });
-
-          resolve();
-        });
+      // Direct render without ready() to avoid async/defer issues
+      this.widgetId = window.turnstile!.render(element, {
+        sitekey: this.siteKey,
+        theme: options.theme || 'light',
+        size: options.size || 'normal',
+        callback: 'turnstileCallback',
+        'expired-callback': 'turnstileExpiredCallback',
+        'error-callback': 'turnstileErrorCallback',
+        ...options,
       });
 
+      console.log('Turnstile: Widget rendered with ID:', this.widgetId);
       return true;
     } catch (error) {
       console.error('Turnstile: Failed to render widget', error);
