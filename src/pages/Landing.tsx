@@ -255,7 +255,7 @@ const Landing: Component = () => {
                 class="px-4 py-2 bg-neutral-300 dark:bg-neutral-600 text-neutral-500 dark:text-neutral-400 rounded-lg cursor-not-allowed flex items-center gap-2"
                 title="VIP is currently disabled"
               >
-                <svg class="w-4 h-4 fill-white" viewBox="0 0 24 24">
+                <svg class="w-4 h-4 fill-neutral-500 dark:fill-neutral-400" viewBox="0 0 24 24">
                   <path d="M5 16L3 5l5.5 1L12 2l3.5 4L21 5l-2 11H5zm2.7-2h8.6l.9-5.4-2.1-.4L12 4l-3.1 4.2-2.1.4L7.7 14z"/>
                 </svg>
                 <span>VIP</span>
