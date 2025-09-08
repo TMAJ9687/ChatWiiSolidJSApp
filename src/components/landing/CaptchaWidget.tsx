@@ -16,16 +16,14 @@ const CaptchaWidget: Component<CaptchaWidgetProps> = (props) => {
     const siteKey = import.meta.env.VITE_RECAPTCHA_SITE_KEY;
     const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
     
-    console.log('CaptchaWidget: Starting initialization');
-    console.log('CaptchaWidget: Site key:', siteKey);
-    console.log('CaptchaWidget: Is localhost:', isLocalhost);
+    // Initialize CAPTCHA widget
     
-    // Skip CAPTCHA in localhost development OR bypass Turnstile due to technical issues
-    if (isLocalhost || true) {
-      console.log('Turnstile: Bypassed due to technical issues');
-      // Auto-verify with bypass token
+    // Skip CAPTCHA in localhost development only
+    if (isLocalhost) {
+      console.log('Turnstile: Bypassed for localhost development');
+      // Auto-verify with bypass token for development
       setTimeout(() => {
-        props.onVerify('turnstile-bypass-' + Date.now());
+        props.onVerify('turnstile-bypass-dev-' + Date.now());
         setIsLoaded(true);
       }, 100);
       return;
@@ -38,23 +36,17 @@ const CaptchaWidget: Component<CaptchaWidgetProps> = (props) => {
     }
 
     try {
-      console.log('CaptchaWidget: Initializing Turnstile service');
       await turnstileService.init(siteKey);
-      
-      console.log('CaptchaWidget: Rendering widget');
       const success = await turnstileService.render(
         'turnstile-widget',
         {
           onSuccess: (token: string) => {
-            console.log('Turnstile: Success callback called');
             props.onVerify(token);
           },
           onExpired: () => {
-            console.log('Turnstile: Expired callback called');
             props.onExpired();
           },
           onError: () => {
-            console.error('Turnstile: Error callback called');
             setHasError(true);
             props.onError();
           }
@@ -66,14 +58,11 @@ const CaptchaWidget: Component<CaptchaWidgetProps> = (props) => {
       );
       
       if (success) {
-        console.log('CaptchaWidget: Widget rendered successfully');
         setIsLoaded(true);
       } else {
-        console.error('CaptchaWidget: Widget rendering failed');
         setHasError(true);
       }
     } catch (error) {
-      console.error('CaptchaWidget: Initialization error:', error);
       setHasError(true);
       props.onError();
     }

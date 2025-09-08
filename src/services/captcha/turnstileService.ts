@@ -42,15 +42,11 @@ class TurnstileService {
    * @param siteKey - Turnstile site key from Cloudflare Dashboard
    */
   async init(siteKey: string): Promise<void> {
-    console.log('Turnstile: Initializing with site key:', siteKey);
-    
     if (!siteKey || typeof window === 'undefined') {
-      console.warn('Turnstile: Invalid site key or running on server');
       return;
     }
 
     if (siteKey === 'your_recaptcha_site_key_here') {
-      console.warn('Turnstile: Default placeholder site key detected');
       return;
     }
 
@@ -59,7 +55,6 @@ class TurnstileService {
     try {
       // Load Turnstile script if not already loaded
       if (!this.isLoaded) {
-        console.log('Turnstile: Loading script...');
         await this.loadScript();
       }
 
@@ -74,10 +69,8 @@ class TurnstileService {
         throw new Error('Turnstile script failed to load after 5 seconds');
       }
 
-      console.log('Turnstile: Service initialized successfully');
       this.isInitialized = true;
     } catch (error) {
-      console.error('Turnstile: Initialization failed:', error);
       this.isInitialized = false;
       throw error;
     }
@@ -90,30 +83,24 @@ class TurnstileService {
     return new Promise((resolve, reject) => {
       const existingScript = document.querySelector('script[src*="turnstile"]');
       if (existingScript) {
-        console.log('Turnstile: Script already exists');
         this.isLoaded = true;
         resolve();
         return;
       }
-
-      console.log('Turnstile: Creating script element');
       const script = document.createElement('script');
       script.src = 'https://challenges.cloudflare.com/turnstile/v0/api.js';
       // Note: Turnstile requires sync loading when using turnstile.ready()
 
       script.onload = () => {
-        console.log('Turnstile: Script loaded successfully');
         this.isLoaded = true;
         resolve();
       };
 
-      script.onerror = (error) => {
-        console.error('Turnstile: Script loading failed', error);
+      script.onerror = () => {
         reject(new Error('Failed to load Turnstile script'));
       };
 
       document.head.appendChild(script);
-      console.log('Turnstile: Script element added to head');
     });
   }
 
@@ -133,7 +120,6 @@ class TurnstileService {
     options: Partial<TurnstileOptions> = {}
   ): Promise<boolean> {
     if (!this.isInitialized || !window.turnstile) {
-      console.warn('Turnstile: Service not initialized');
       return false;
     }
 
@@ -146,26 +132,19 @@ class TurnstileService {
     const errorCallback = `chatwii_turnstile_error_${callbackId}`;
 
     (window as any)[successCallback] = () => {
-      console.log('Turnstile: Success callback triggered');
       const token = this.getResponse();
-      console.log('Turnstile: Retrieved token:', token);
       if (token && this.callbacks) {
-        console.log('Turnstile: Calling onSuccess with token');
         this.callbacks.onSuccess(token);
-      } else {
-        console.warn('Turnstile: No token or callbacks available');
       }
     };
 
     (window as any)[expiredCallback] = () => {
-      console.log('Turnstile: Expired callback triggered');
       if (this.callbacks) {
         this.callbacks.onExpired();
       }
     };
 
     (window as any)[errorCallback] = () => {
-      console.log('Turnstile: Error callback triggered');
       if (this.callbacks) {
         this.callbacks.onError();
       }
@@ -174,7 +153,6 @@ class TurnstileService {
     try {
       const element = document.getElementById(elementId);
       if (!element) {
-        console.error(`Turnstile: Element with ID '${elementId}' not found`);
         return false;
       }
 
@@ -189,10 +167,8 @@ class TurnstileService {
         ...options,
       });
 
-      console.log('Turnstile: Widget rendered with ID:', this.widgetId);
       return true;
     } catch (error) {
-      console.error('Turnstile: Failed to render widget', error);
       return false;
     }
   }
