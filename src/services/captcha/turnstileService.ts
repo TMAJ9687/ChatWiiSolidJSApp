@@ -43,11 +43,11 @@ class TurnstileService {
    */
   async init(siteKey: string): Promise<void> {
     if (!siteKey || typeof window === 'undefined') {
-      return;
+      throw new Error('Invalid site key or running on server');
     }
 
     if (siteKey === 'your_recaptcha_site_key_here') {
-      return;
+      throw new Error('Default placeholder site key detected - please configure VITE_RECAPTCHA_SITE_KEY');
     }
 
     this.siteKey = siteKey;
@@ -58,21 +58,27 @@ class TurnstileService {
         await this.loadScript();
       }
 
-      // Wait for turnstile to be available
-      let attempts = 0;
-      while (!window.turnstile && attempts < 50) {
+      // Wait for turnstile to be available with timeout
+      const startTime = Date.now();
+      while (!window.turnstile && (Date.now() - startTime) < 10000) {
         await new Promise(resolve => setTimeout(resolve, 100));
-        attempts++;
       }
 
       if (!window.turnstile) {
-        throw new Error('Turnstile script failed to load after 5 seconds');
+        throw new Error('Turnstile API not available after 10 seconds - check internet connection');
+      }
+
+      // Verify the API is functional
+      if (typeof window.turnstile.render !== 'function') {
+        throw new Error('Turnstile API malformed - render function not available');
       }
 
       this.isInitialized = true;
     } catch (error) {
       this.isInitialized = false;
-      throw error;
+      // Enhanced error reporting
+      const errorMessage = error instanceof Error ? error.message : 'Unknown Turnstile initialization error';
+      throw new Error(`Turnstile initialization failed: ${errorMessage}`);
     }
   }
 
@@ -120,21 +126,31 @@ class TurnstileService {
     options: Partial<TurnstileOptions> = {}
   ): Promise<boolean> {
     if (!this.isInitialized || !window.turnstile) {
+      callbacks.onError();
       return false;
     }
 
     this.callbacks = callbacks;
 
     // Set up unique global callbacks to avoid conflicts
-    const callbackId = Date.now().toString();
+    const callbackId = Date.now().toString() + Math.random().toString(36);
     const successCallback = `chatwii_turnstile_success_${callbackId}`;
     const expiredCallback = `chatwii_turnstile_expired_${callbackId}`;
     const errorCallback = `chatwii_turnstile_error_${callbackId}`;
 
+    // Enhanced callback with error handling
     (window as any)[successCallback] = () => {
-      const token = this.getResponse();
-      if (token && this.callbacks) {
-        this.callbacks.onSuccess(token);
+      try {
+        const token = this.getResponse();
+        if (token && this.callbacks) {
+          this.callbacks.onSuccess(token);
+        } else if (this.callbacks) {
+          this.callbacks.onError();
+        }
+      } catch (error) {
+        if (this.callbacks) {
+          this.callbacks.onError();
+        }
       }
     };
 
@@ -153,10 +169,22 @@ class TurnstileService {
     try {
       const element = document.getElementById(elementId);
       if (!element) {
+        callbacks.onError();
         return false;
       }
 
-      // Direct render without ready() to avoid async/defer issues
+      // Validate site key format (Turnstile keys start with 0x)
+      if (!this.siteKey.startsWith('0x')) {
+        callbacks.onError();
+        return false;
+      }
+
+      // Set up error timeout - if widget doesn't load in 15 seconds, fail
+      const errorTimeout = setTimeout(() => {
+        callbacks.onError();
+      }, 15000);
+
+      // Enhanced render with error catching
       this.widgetId = window.turnstile!.render(element, {
         sitekey: this.siteKey,
         theme: options.theme || 'light',
@@ -167,8 +195,17 @@ class TurnstileService {
         ...options,
       });
 
+      // Clear timeout if successful
+      clearTimeout(errorTimeout);
+
+      if (!this.widgetId) {
+        callbacks.onError();
+        return false;
+      }
+
       return true;
     } catch (error) {
+      callbacks.onError();
       return false;
     }
   }
