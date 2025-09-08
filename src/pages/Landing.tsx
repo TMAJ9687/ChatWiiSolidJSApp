@@ -49,7 +49,7 @@ const Landing: Component = () => {
     analytics.setUserProperty('page_type', 'landing');
   });
 
-  // Validation effect
+  // Validation effect with comprehensive debugging
   createEffect(() => {
     const nick = nickname();
 
@@ -76,7 +76,36 @@ const Landing: Component = () => {
     const captchaRequired = import.meta.env.VITE_RECAPTCHA_SITE_KEY && 
                            import.meta.env.VITE_RECAPTCHA_SITE_KEY !== 'your_recaptcha_site_key_here';
     
-    setIsValid(validation.valid && g !== null && a !== null && (!captchaRequired || captcha !== null));
+    // Enhanced CAPTCHA validation - account for different token types
+    const isCaptchaValid = !captchaRequired || (captcha !== null && captcha.length > 0);
+    
+    // Debug logging for form validation
+    const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+    
+    console.log('🔍 Form Validation Debug:', {
+      nickname: nick,
+      nicknameValid: validation.valid,
+      gender: g,
+      age: a,
+      captchaToken: captcha,
+      captchaTokenLength: captcha?.length,
+      captchaRequired,
+      isCaptchaValid,
+      isLocalhost,
+      siteKey: import.meta.env.VITE_RECAPTCHA_SITE_KEY
+    });
+    
+    const finalValid = validation.valid && g !== null && a !== null && isCaptchaValid;
+    
+    console.log('✅ Final validation result:', {
+      nicknameValid: validation.valid,
+      genderValid: g !== null,
+      ageValid: a !== null,
+      captchaValidForSubmission: isCaptchaValid,
+      overall: finalValid
+    });
+    
+    setIsValid(finalValid);
   });
 
   // Random nickname generator with much more variety
@@ -160,25 +189,39 @@ const Landing: Component = () => {
     setNickname(nickname);
   };
 
-  // CAPTCHA handlers
+  // CAPTCHA handlers with debug logging
   const handleCaptchaVerify = (token: string) => {
+    console.log('🎯 CAPTCHA verified with token:', token);
     setCaptchaToken(token);
     setCaptchaError("");
   };
 
   const handleCaptchaExpired = () => {
+    console.log('⏰ CAPTCHA expired');
     setCaptchaToken(null);
     setCaptchaError("CAPTCHA expired. Please verify again.");
   };
 
   const handleCaptchaError = () => {
+    console.log('❌ CAPTCHA error occurred');
     setCaptchaToken(null);
     setCaptchaError("CAPTCHA verification failed. Please try again.");
   };
 
   // Handle chat start with anonymous auth
   const handleStartChat = async () => {
-    if (!isValid()) return;
+    console.log('🚀 Start Chat clicked! Current validation state:', {
+      isValid: isValid(),
+      nickname: nickname(),
+      gender: gender(),
+      age: age(),
+      captchaToken: captchaToken()
+    });
+    
+    if (!isValid()) {
+      console.log('❌ Form validation failed - button should be disabled');
+      return;
+    }
 
     // Check CAPTCHA if required
     const captchaRequired = import.meta.env.VITE_RECAPTCHA_SITE_KEY && 
@@ -313,6 +356,11 @@ const Landing: Component = () => {
               </div>
             </Show>
 
+            {/* Debug Info - Remove in production */}
+            <div class="text-xs text-gray-500 text-center p-2 bg-gray-50 dark:bg-gray-800 rounded">
+              Debug: Valid={isValid() ? '✅' : '❌'} | Nick={nickname() ? '✅' : '❌'} | Gender={gender() ? '✅' : '❌'} | Age={age() ? '✅' : '❌'} | CAPTCHA={captchaToken() ? '✅' : '❌'}
+            </div>
+
             {/* Start Chat Button */}
             <button
               onClick={handleStartChat}
@@ -320,8 +368,8 @@ const Landing: Component = () => {
               class={`w-full py-4 rounded-lg font-medium transition-all flex items-center justify-center gap-2
                       ${
                         isValid() && !loading()
-                          ? "bg-secondary-500 hover:bg-secondary-600 text-white"
-                          : "bg-neutral-200 dark:bg-neutral-700 text-text-400 dark:text-text-600 cursor-not-allowed"
+                          ? "bg-secondary-500 hover:bg-secondary-600 text-white shadow-md"
+                          : "bg-neutral-300 dark:bg-neutral-600 text-neutral-500 dark:text-neutral-400 cursor-not-allowed opacity-50"
                       }`}
             >
               {loading() ? (
