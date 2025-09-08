@@ -99,8 +99,7 @@ class TurnstileService {
       console.log('Turnstile: Creating script element');
       const script = document.createElement('script');
       script.src = 'https://challenges.cloudflare.com/turnstile/v0/api.js';
-      script.async = true;
-      script.defer = true;
+      // Note: Turnstile requires sync loading when using turnstile.ready()
 
       script.onload = () => {
         console.log('Turnstile: Script loaded successfully');
