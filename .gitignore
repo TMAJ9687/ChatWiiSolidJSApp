@@ -37,3 +37,7 @@ coverage/
 # Temporary folders
 tmp/
 temp/
+
+# Embedded repositories (exclude these folders)
+ChatWiiJS/
+WiiJS/
