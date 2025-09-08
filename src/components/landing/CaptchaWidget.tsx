@@ -1,5 +1,5 @@
 import { Component, createSignal, onMount, onCleanup } from "solid-js";
-import { recaptchaService } from "../../services/captcha/recaptchaService";
+import { turnstileService } from "../../services/captcha/turnstileService";
 
 interface CaptchaWidgetProps {
   onVerify: (token: string) => void;
@@ -22,7 +22,7 @@ const CaptchaWidget: Component<CaptchaWidgetProps> = (props) => {
     
     // Skip CAPTCHA in localhost development
     if (isLocalhost) {
-      console.log('reCAPTCHA: Disabled for localhost development');
+      console.log('Turnstile: Disabled for localhost development');
       // Auto-verify for localhost
       setTimeout(() => {
         props.onVerify('localhost-dev-bypass');
@@ -32,32 +32,31 @@ const CaptchaWidget: Component<CaptchaWidgetProps> = (props) => {
     }
     
     if (!siteKey || siteKey === 'your_recaptcha_site_key_here') {
-      console.error('reCAPTCHA: Site key not configured or is placeholder');
+      console.error('Turnstile: Site key not configured or is placeholder');
       setHasError(true);
       return;
     }
 
     try {
-      console.log('CaptchaWidget: Initializing reCAPTCHA service');
-      await recaptchaService.init(siteKey);
+      console.log('CaptchaWidget: Initializing Turnstile service');
+      await turnstileService.init(siteKey);
       
       console.log('CaptchaWidget: Rendering widget');
-      const success = await recaptchaService.render(
-        'recaptcha-widget',
+      const success = await turnstileService.render(
+        'turnstile-widget',
         {
           onSuccess: (token: string) => {
-            console.log('reCAPTCHA: Success callback called');
+            console.log('Turnstile: Success callback called');
             props.onVerify(token);
           },
           onExpired: () => {
-            console.log('reCAPTCHA: Expired callback called');
+            console.log('Turnstile: Expired callback called');
             props.onExpired();
           },
           onError: () => {
-            console.error('reCAPTCHA: Error callback called - likely domain mismatch');
-            // For now, treat domain errors as success for testing
-            console.log('reCAPTCHA: Bypassing domain error for testing');
-            props.onVerify('domain-error-bypass-' + Date.now());
+            console.error('Turnstile: Error callback called');
+            setHasError(true);
+            props.onError();
           }
         },
         {
@@ -81,7 +80,7 @@ const CaptchaWidget: Component<CaptchaWidgetProps> = (props) => {
   });
 
   onCleanup(() => {
-    recaptchaService.cleanup();
+    turnstileService.cleanup();
   });
 
   const isLocalhost = () => window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
@@ -98,7 +97,7 @@ const CaptchaWidget: Component<CaptchaWidgetProps> = (props) => {
         </div>
       ) : (
         <div 
-          id="recaptcha-widget" 
+          id="turnstile-widget" 
           class={`transition-opacity duration-300 ${
             isLoaded() ? 'opacity-100' : 'opacity-50'
           }`}

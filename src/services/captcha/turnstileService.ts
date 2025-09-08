@@ -45,52 +45,52 @@ class TurnstileService {
     console.log('Turnstile: Initializing with site key:', siteKey);
     
     if (!siteKey || typeof window === 'undefined') {
-      console.warn('reCAPTCHA: Invalid site key or running on server');
+      console.warn('Turnstile: Invalid site key or running on server');
       return;
     }
 
     if (siteKey === 'your_recaptcha_site_key_here') {
-      console.warn('reCAPTCHA: Default placeholder site key detected');
+      console.warn('Turnstile: Default placeholder site key detected');
       return;
     }
 
     this.siteKey = siteKey;
 
     try {
-      // Load reCAPTCHA script if not already loaded
+      // Load Turnstile script if not already loaded
       if (!this.isLoaded) {
-        console.log('reCAPTCHA: Loading script...');
+        console.log('Turnstile: Loading script...');
         await this.loadScript();
       }
 
-      // Wait for grecaptcha to be available
+      // Wait for turnstile to be available
       let attempts = 0;
-      while (!window.grecaptcha && attempts < 50) {
+      while (!window.turnstile && attempts < 50) {
         await new Promise(resolve => setTimeout(resolve, 100));
         attempts++;
       }
 
-      if (!window.grecaptcha) {
-        throw new Error('reCAPTCHA script failed to load after 5 seconds');
+      if (!window.turnstile) {
+        throw new Error('Turnstile script failed to load after 5 seconds');
       }
 
-      console.log('reCAPTCHA: Service initialized successfully');
+      console.log('Turnstile: Service initialized successfully');
       this.isInitialized = true;
     } catch (error) {
-      console.error('reCAPTCHA: Initialization failed:', error);
+      console.error('Turnstile: Initialization failed:', error);
       this.isInitialized = false;
       throw error;
     }
   }
 
   /**
-   * Load reCAPTCHA script
+   * Load Turnstile script
    */
   private loadScript(): Promise<void> {
     return new Promise((resolve, reject) => {
-      const existingScript = document.querySelector('script[src*="recaptcha"]');
+      const existingScript = document.querySelector('script[src*="turnstile"]');
       if (existingScript) {
-        console.log('reCAPTCHA: Script already exists');
+        console.log('Turnstile: Script already exists');
         this.isLoaded = true;
         resolve();
         return;
@@ -114,15 +114,15 @@ class TurnstileService {
       };
 
       document.head.appendChild(script);
-      console.log('reCAPTCHA: Script element added to head');
+      console.log('Turnstile: Script element added to head');
     });
   }
 
   /**
-   * Render reCAPTCHA widget
+   * Render Turnstile widget
    * @param elementId - ID of the element to render the widget in
    * @param callbacks - Success, expired, and error callbacks
-   * @param options - Additional reCAPTCHA options
+   * @param options - Additional Turnstile options
    */
   async render(
     elementId: string,
@@ -131,30 +131,30 @@ class TurnstileService {
       onExpired: () => void;
       onError: () => void;
     },
-    options: Partial<RecaptchaOptions> = {}
+    options: Partial<TurnstileOptions> = {}
   ): Promise<boolean> {
-    if (!this.isInitialized || !window.grecaptcha) {
-      console.warn('reCAPTCHA: Service not initialized');
+    if (!this.isInitialized || !window.turnstile) {
+      console.warn('Turnstile: Service not initialized');
       return false;
     }
 
     this.callbacks = callbacks;
 
     // Set up global callbacks
-    window.recaptchaCallback = () => {
+    window.turnstileCallback = () => {
       const token = this.getResponse();
       if (token && this.callbacks) {
         this.callbacks.onSuccess(token);
       }
     };
 
-    window.recaptchaExpiredCallback = () => {
+    window.turnstileExpiredCallback = () => {
       if (this.callbacks) {
         this.callbacks.onExpired();
       }
     };
 
-    window.recaptchaErrorCallback = () => {
+    window.turnstileErrorCallback = () => {
       if (this.callbacks) {
         this.callbacks.onError();
       }
@@ -162,20 +162,20 @@ class TurnstileService {
 
     try {
       await new Promise<void>((resolve) => {
-        window.grecaptcha!.ready(() => {
+        window.turnstile!.ready(() => {
           const element = document.getElementById(elementId);
           if (!element) {
-            console.error(`reCAPTCHA: Element with ID '${elementId}' not found`);
+            console.error(`Turnstile: Element with ID '${elementId}' not found`);
             return;
           }
 
-          this.widgetId = window.grecaptcha!.render(element, {
+          this.widgetId = window.turnstile!.render(element, {
             sitekey: this.siteKey,
             theme: options.theme || 'light',
             size: options.size || 'normal',
-            callback: 'recaptchaCallback',
-            'expired-callback': 'recaptchaExpiredCallback',
-            'error-callback': 'recaptchaErrorCallback',
+            callback: 'turnstileCallback',
+            'expired-callback': 'turnstileExpiredCallback',
+            'error-callback': 'turnstileErrorCallback',
             ...options,
           });
 
@@ -185,89 +185,65 @@ class TurnstileService {
 
       return true;
     } catch (error) {
-      console.error('reCAPTCHA: Failed to render widget', error);
+      console.error('Turnstile: Failed to render widget', error);
       return false;
     }
   }
 
   /**
-   * Get reCAPTCHA response token
+   * Get Turnstile response token
    */
   getResponse(): string {
-    if (!window.grecaptcha || this.widgetId === null) {
+    if (!window.turnstile || this.widgetId === null) {
       return '';
     }
 
-    return window.grecaptcha.getResponse(this.widgetId);
+    return window.turnstile.getResponse(this.widgetId);
   }
 
   /**
-   * Reset reCAPTCHA widget
+   * Reset Turnstile widget
    */
   reset(): void {
-    if (!window.grecaptcha || this.widgetId === null) {
+    if (!window.turnstile || this.widgetId === null) {
       return;
     }
 
-    window.grecaptcha.reset(this.widgetId);
+    window.turnstile.reset(this.widgetId);
   }
 
   /**
-   * Execute reCAPTCHA (for invisible reCAPTCHA)
-   */
-  execute(): void {
-    if (!window.grecaptcha || this.widgetId === null) {
-      return;
-    }
-
-    window.grecaptcha.execute(this.widgetId);
-  }
-
-  /**
-   * Verify token on the server side
-   * Note: This should be implemented on your backend
-   */
-  async verifyToken(token: string): Promise<boolean> {
-    // This is a placeholder - implement server-side verification
-    // DO NOT verify tokens on the client side in production!
-    console.warn('reCAPTCHA: Implement server-side token verification');
-    
-    // For demo purposes, we'll just check if token exists
-    return token.length > 0;
-  }
-
-  /**
-   * Check if reCAPTCHA is ready
+   * Check if Turnstile is ready
    */
   isReady(): boolean {
-    return this.isInitialized && !!window.grecaptcha;
+    return this.isInitialized && !!window.turnstile;
   }
 
   /**
-   * Clean up reCAPTCHA
+   * Clean up Turnstile
    */
   cleanup(): void {
     this.widgetId = null;
     this.callbacks = null;
     
     // Clean up global callbacks
-    if (window.recaptchaCallback) {
-      delete window.recaptchaCallback;
+    if (window.turnstileCallback) {
+      delete window.turnstileCallback;
     }
-    if (window.recaptchaExpiredCallback) {
-      delete window.recaptchaExpiredCallback;
+    if (window.turnstileExpiredCallback) {
+      delete window.turnstileExpiredCallback;
     }
-    if (window.recaptchaErrorCallback) {
-      delete window.recaptchaErrorCallback;
+    if (window.turnstileErrorCallback) {
+      delete window.turnstileErrorCallback;
     }
   }
 }
 
 // Create and export singleton instance
-export const recaptchaService = new RecaptchaService();
+export const turnstileService = new TurnstileService();
 
 // Auto-initialize if site key is available in environment
-const RECAPTCHA_SITE_KEY = import.meta.env.VITE_RECAPTCHA_SITE_KEY;
-if (RECAPTCHA_SITE_KEY) {
-  recaptchaService.init(RECAPTCHA_SITE_KEY);
+const TURNSTILE_SITE_KEY = import.meta.env.VITE_RECAPTCHA_SITE_KEY;
+if (TURNSTILE_SITE_KEY) {
+  turnstileService.init(TURNSTILE_SITE_KEY);
 }
