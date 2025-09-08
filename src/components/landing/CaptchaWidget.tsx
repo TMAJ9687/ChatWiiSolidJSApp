@@ -16,6 +16,10 @@ const CaptchaWidget: Component<CaptchaWidgetProps> = (props) => {
     const siteKey = import.meta.env.VITE_RECAPTCHA_SITE_KEY;
     const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
     
+    console.log('CaptchaWidget: Starting initialization');
+    console.log('CaptchaWidget: Site key:', siteKey);
+    console.log('CaptchaWidget: Is localhost:', isLocalhost);
+    
     // Skip CAPTCHA in localhost development
     if (isLocalhost) {
       console.log('reCAPTCHA: Disabled for localhost development');
@@ -28,24 +32,29 @@ const CaptchaWidget: Component<CaptchaWidgetProps> = (props) => {
     }
     
     if (!siteKey || siteKey === 'your_recaptcha_site_key_here') {
-      console.warn('reCAPTCHA: Site key not configured');
+      console.error('reCAPTCHA: Site key not configured or is placeholder');
       setHasError(true);
       return;
     }
 
     try {
+      console.log('CaptchaWidget: Initializing reCAPTCHA service');
       await recaptchaService.init(siteKey);
       
+      console.log('CaptchaWidget: Rendering widget');
       const success = await recaptchaService.render(
         'recaptcha-widget',
         {
           onSuccess: (token: string) => {
+            console.log('reCAPTCHA: Success callback called');
             props.onVerify(token);
           },
           onExpired: () => {
+            console.log('reCAPTCHA: Expired callback called');
             props.onExpired();
           },
           onError: () => {
+            console.error('reCAPTCHA: Error callback called');
             setHasError(true);
             props.onError();
           }
@@ -57,11 +66,14 @@ const CaptchaWidget: Component<CaptchaWidgetProps> = (props) => {
       );
       
       if (success) {
+        console.log('CaptchaWidget: Widget rendered successfully');
         setIsLoaded(true);
       } else {
+        console.error('CaptchaWidget: Widget rendering failed');
         setHasError(true);
       }
     } catch (error) {
+      console.error('CaptchaWidget: Initialization error:', error);
       setHasError(true);
       props.onError();
     }

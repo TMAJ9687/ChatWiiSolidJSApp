@@ -43,19 +43,45 @@ class RecaptchaService {
    * @param siteKey - reCAPTCHA site key from Google Console
    */
   async init(siteKey: string): Promise<void> {
+    console.log('reCAPTCHA: Initializing with site key:', siteKey);
+    
     if (!siteKey || typeof window === 'undefined') {
       console.warn('reCAPTCHA: Invalid site key or running on server');
       return;
     }
 
-    this.siteKey = siteKey;
-
-    // Load reCAPTCHA script if not already loaded
-    if (!this.isLoaded) {
-      await this.loadScript();
+    if (siteKey === 'your_recaptcha_site_key_here') {
+      console.warn('reCAPTCHA: Default placeholder site key detected');
+      return;
     }
 
-    this.isInitialized = true;
+    this.siteKey = siteKey;
+
+    try {
+      // Load reCAPTCHA script if not already loaded
+      if (!this.isLoaded) {
+        console.log('reCAPTCHA: Loading script...');
+        await this.loadScript();
+      }
+
+      // Wait for grecaptcha to be available
+      let attempts = 0;
+      while (!window.grecaptcha && attempts < 50) {
+        await new Promise(resolve => setTimeout(resolve, 100));
+        attempts++;
+      }
+
+      if (!window.grecaptcha) {
+        throw new Error('reCAPTCHA script failed to load after 5 seconds');
+      }
+
+      console.log('reCAPTCHA: Service initialized successfully');
+      this.isInitialized = true;
+    } catch (error) {
+      console.error('reCAPTCHA: Initialization failed:', error);
+      this.isInitialized = false;
+      throw error;
+    }
   }
 
   /**
@@ -63,27 +89,33 @@ class RecaptchaService {
    */
   private loadScript(): Promise<void> {
     return new Promise((resolve, reject) => {
-      if (document.querySelector('script[src*="recaptcha"]')) {
+      const existingScript = document.querySelector('script[src*="recaptcha"]');
+      if (existingScript) {
+        console.log('reCAPTCHA: Script already exists');
         this.isLoaded = true;
         resolve();
         return;
       }
 
+      console.log('reCAPTCHA: Creating script element');
       const script = document.createElement('script');
       script.src = 'https://www.google.com/recaptcha/api.js';
       script.async = true;
       script.defer = true;
 
       script.onload = () => {
+        console.log('reCAPTCHA: Script loaded successfully');
         this.isLoaded = true;
         resolve();
       };
 
-      script.onerror = () => {
+      script.onerror = (error) => {
+        console.error('reCAPTCHA: Script loading failed', error);
         reject(new Error('Failed to load reCAPTCHA script'));
       };
 
       document.head.appendChild(script);
+      console.log('reCAPTCHA: Script element added to head');
     });
   }
 
