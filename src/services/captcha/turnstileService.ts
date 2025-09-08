@@ -139,8 +139,13 @@ class TurnstileService {
 
     this.callbacks = callbacks;
 
-    // Set up global callbacks
-    window.turnstileCallback = () => {
+    // Set up unique global callbacks to avoid conflicts
+    const callbackId = Date.now().toString();
+    const successCallback = `chatwii_turnstile_success_${callbackId}`;
+    const expiredCallback = `chatwii_turnstile_expired_${callbackId}`;
+    const errorCallback = `chatwii_turnstile_error_${callbackId}`;
+
+    (window as any)[successCallback] = () => {
       console.log('Turnstile: Success callback triggered');
       const token = this.getResponse();
       console.log('Turnstile: Retrieved token:', token);
@@ -152,14 +157,14 @@ class TurnstileService {
       }
     };
 
-    window.turnstileExpiredCallback = () => {
+    (window as any)[expiredCallback] = () => {
       console.log('Turnstile: Expired callback triggered');
       if (this.callbacks) {
         this.callbacks.onExpired();
       }
     };
 
-    window.turnstileErrorCallback = () => {
+    (window as any)[errorCallback] = () => {
       console.log('Turnstile: Error callback triggered');
       if (this.callbacks) {
         this.callbacks.onError();
@@ -178,9 +183,9 @@ class TurnstileService {
         sitekey: this.siteKey,
         theme: options.theme || 'light',
         size: options.size || 'normal',
-        callback: 'turnstileCallback',
-        'expired-callback': 'turnstileExpiredCallback',
-        'error-callback': 'turnstileErrorCallback',
+        callback: successCallback,
+        'expired-callback': expiredCallback,
+        'error-callback': errorCallback,
         ...options,
       });
 
