@@ -1,0 +1,79 @@
+@import url("https://fonts.googleapis.com/css2?family=Open+Sans:wght@300;400;500;600;700&display=swap");
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html {
+    font-family: "Open Sans", system-ui, sans-serif;
+  }
+
+  body {
+    @apply antialiased;
+  }
+}
+
+@layer utilities {
+  /* Overflow prevention for mobile layouts */
+  * {
+    max-width: 100vw;
+  }
+
+  /* Text breaking only for text elements */
+  p, span, div {
+    overflow-wrap: break-word;
+  }
+
+  /* Mobile-specific constraints */
+  @media (max-width: 640px) {
+    body {
+      overflow-x: hidden;
+    }
+    
+    .flex {
+      min-width: 0;
+    }
+  }
+
+  .hide-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+
+  .hide-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+
+  /* Range slider dark mode styles */
+  .slider-thumb::-webkit-slider-thumb {
+    appearance: none;
+    height: 16px;
+    width: 16px;
+    border-radius: 50%;
+    background: #6366f1;
+    cursor: pointer;
+    border: 2px solid #ffffff;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  }
+
+  .dark .slider-thumb::-webkit-slider-thumb {
+    background: #818cf8;
+    border: 2px solid #374151;
+  }
+
+  .slider-thumb::-moz-range-thumb {
+    height: 16px;
+    width: 16px;
+    border-radius: 50%;
+    background: #6366f1;
+    cursor: pointer;
+    border: 2px solid #ffffff;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  }
+
+  .dark .slider-thumb::-moz-range-thumb {
+    background: #818cf8;
+    border: 2px solid #374151;
+  }
+}

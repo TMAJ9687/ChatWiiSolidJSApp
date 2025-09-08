@@ -1,0 +1,41 @@
+{
+  "name": "chatwii",
+  "version": "1.0.0",
+  "description": "Anonymous real-time chat platform built with SolidJS and Supabase",
+  "type": "module",
+  "scripts": {
+    "start": "vite",
+    "dev": "vite",
+    "build": "vite build",
+    "serve": "vite preview",
+    "test": "vitest",
+    "test:run": "vitest run",
+    "test:coverage": "vitest run --coverage",
+    "test:ui": "vitest --ui",
+    "test:services": "vitest run src/services/supabase/__tests__",
+    "test:components": "vitest run src/components",
+    "test:report": "vitest run --coverage --reporter=verbose"
+  },
+  "license": "MIT",
+  "devDependencies": {
+    "@solidjs/testing-library": "^0.8.10",
+    "@testing-library/jest-dom": "^6.8.0",
+    "@types/node": "^24.3.0",
+    "@vitest/ui": "^3.2.4",
+    "autoprefixer": "^10.4.16",
+    "jsdom": "^26.1.0",
+    "postcss": "^8.4.31",
+    "tailwindcss": "^3.4.17",
+    "typescript": "^5.9.2",
+    "vite": "^6.0.0",
+    "vite-plugin-solid": "^2.11.8",
+    "vitest": "^3.2.4"
+  },
+  "dependencies": {
+    "@solidjs/meta": "^0.29.4",
+    "@solidjs/router": "^0.15.3",
+    "@supabase/supabase-js": "^2.57.0",
+    "solid-icons": "^1.1.0",
+    "solid-js": "^1.9.9"
+  }
+}

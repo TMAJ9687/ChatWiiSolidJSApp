@@ -1,0 +1,201 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
+        xmlns:news="http://www.google.com/schemas/sitemap-news/0.9"
+        xmlns:xhtml="http://www.w3.org/1999/xhtml"
+        xmlns:mobile="http://www.google.com/schemas/sitemap-mobile/1.0"
+        xmlns:image="http://www.google.com/schemas/sitemap-image/1.1"
+        xmlns:video="http://www.google.com/schemas/sitemap-video/1.1">
+    
+    <!-- Homepage -->
+    <url>
+        <loc>https://chatwii.com/</loc>
+        <lastmod>2025-01-09T12:00:00+00:00</lastmod>
+        <changefreq>daily</changefreq>
+        <priority>1.0</priority>
+        <xhtml:link rel="alternate" hreflang="en" href="https://chatwii.com/"/>
+        <xhtml:link rel="alternate" hreflang="es" href="https://chatwii.com/es/"/>
+        <xhtml:link rel="alternate" hreflang="fr" href="https://chatwii.com/fr/"/>
+        <xhtml:link rel="alternate" hreflang="de" href="https://chatwii.com/de/"/>
+        <xhtml:link rel="alternate" hreflang="zh" href="https://chatwii.com/zh/"/>
+        <xhtml:link rel="alternate" hreflang="ja" href="https://chatwii.com/ja/"/>
+        <xhtml:link rel="alternate" hreflang="ar" href="https://chatwii.com/ar/"/>
+        <xhtml:link rel="alternate" hreflang="hi" href="https://chatwii.com/hi/"/>
+        <xhtml:link rel="alternate" hreflang="pt" href="https://chatwii.com/pt/"/>
+        <xhtml:link rel="alternate" hreflang="ru" href="https://chatwii.com/ru/"/>
+        <xhtml:link rel="alternate" hreflang="x-default" href="https://chatwii.com/"/>
+    </url>
+    
+    <!-- About Page -->
+    <url>
+        <loc>https://chatwii.com/about</loc>
+        <lastmod>2025-01-09T12:00:00+00:00</lastmod>
+        <changefreq>monthly</changefreq>
+        <priority>0.8</priority>
+    </url>
+    
+    <!-- Privacy Policy -->
+    <url>
+        <loc>https://chatwii.com/privacy</loc>
+        <lastmod>2025-01-09T12:00:00+00:00</lastmod>
+        <changefreq>monthly</changefreq>
+        <priority>0.6</priority>
+    </url>
+    
+    <!-- Safety Guide -->
+    <url>
+        <loc>https://chatwii.com/safety</loc>
+        <lastmod>2025-01-09T12:00:00+00:00</lastmod>
+        <changefreq>monthly</changefreq>
+        <priority>0.9</priority>
+    </url>
+    
+    <!-- How It Works -->
+    <url>
+        <loc>https://chatwii.com/how-it-works</loc>
+        <lastmod>2025-01-09T12:00:00+00:00</lastmod>
+        <changefreq>monthly</changefreq>
+        <priority>0.8</priority>
+    </url>
+    
+    <!-- Chat Page -->
+    <url>
+        <loc>https://chatwii.com/chat</loc>
+        <lastmod>2025-01-09T12:00:00+00:00</lastmod>
+        <changefreq>hourly</changefreq>
+        <priority>0.9</priority>
+    </url>
+    
+    <!-- Feedback Page -->
+    <url>
+        <loc>https://chatwii.com/feedback</loc>
+        <lastmod>2025-01-09T12:00:00+00:00</lastmod>
+        <changefreq>weekly</changefreq>
+        <priority>0.5</priority>
+    </url>
+    
+    <!-- Language-specific pages -->
+    
+    <!-- Spanish -->
+    <url>
+        <loc>https://chatwii.com/es/</loc>
+        <lastmod>2025-01-09T12:00:00+00:00</lastmod>
+        <changefreq>daily</changefreq>
+        <priority>0.9</priority>
+        <xhtml:link rel="alternate" hreflang="en" href="https://chatwii.com/"/>
+        <xhtml:link rel="alternate" hreflang="es" href="https://chatwii.com/es/"/>
+        <xhtml:link rel="alternate" hreflang="x-default" href="https://chatwii.com/"/>
+    </url>
+    
+    <url>
+        <loc>https://chatwii.com/es/acerca-de</loc>
+        <lastmod>2025-01-09T12:00:00+00:00</lastmod>
+        <changefreq>monthly</changefreq>
+        <priority>0.7</priority>
+    </url>
+    
+    <!-- French -->
+    <url>
+        <loc>https://chatwii.com/fr/</loc>
+        <lastmod>2025-01-09T12:00:00+00:00</lastmod>
+        <changefreq>daily</changefreq>
+        <priority>0.9</priority>
+        <xhtml:link rel="alternate" hreflang="en" href="https://chatwii.com/"/>
+        <xhtml:link rel="alternate" hreflang="fr" href="https://chatwii.com/fr/"/>
+        <xhtml:link rel="alternate" hreflang="x-default" href="https://chatwii.com/"/>
+    </url>
+    
+    <!-- German -->
+    <url>
+        <loc>https://chatwii.com/de/</loc>
+        <lastmod>2025-01-09T12:00:00+00:00</lastmod>
+        <changefreq>daily</changefreq>
+        <priority>0.9</priority>
+        <xhtml:link rel="alternate" hreflang="en" href="https://chatwii.com/"/>
+        <xhtml:link rel="alternate" hreflang="de" href="https://chatwii.com/de/"/>
+        <xhtml:link rel="alternate" hreflang="x-default" href="https://chatwii.com/"/>
+    </url>
+    
+    <!-- Chinese -->
+    <url>
+        <loc>https://chatwii.com/zh/</loc>
+        <lastmod>2025-01-09T12:00:00+00:00</lastmod>
+        <changefreq>daily</changefreq>
+        <priority>0.9</priority>
+        <xhtml:link rel="alternate" hreflang="en" href="https://chatwii.com/"/>
+        <xhtml:link rel="alternate" hreflang="zh" href="https://chatwii.com/zh/"/>
+        <xhtml:link rel="alternate" hreflang="x-default" href="https://chatwii.com/"/>
+    </url>
+    
+    <!-- Japanese -->
+    <url>
+        <loc>https://chatwii.com/ja/</loc>
+        <lastmod>2025-01-09T12:00:00+00:00</lastmod>
+        <changefreq>daily</changefreq>
+        <priority>0.9</priority>
+        <xhtml:link rel="alternate" hreflang="en" href="https://chatwii.com/"/>
+        <xhtml:link rel="alternate" hreflang="ja" href="https://chatwii.com/ja/"/>
+        <xhtml:link rel="alternate" hreflang="x-default" href="https://chatwii.com/"/>
+    </url>
+    
+    <!-- Topic-specific pages (Future programmatic content) -->
+    
+    <!-- Anonymous Chat Guides -->
+    <url>
+        <loc>https://chatwii.com/guide/anonymous-chat-safety</loc>
+        <lastmod>2025-01-09T12:00:00+00:00</lastmod>
+        <changefreq>weekly</changefreq>
+        <priority>0.8</priority>
+    </url>
+    
+    <url>
+        <loc>https://chatwii.com/guide/how-to-chat-anonymously</loc>
+        <lastmod>2025-01-09T12:00:00+00:00</lastmod>
+        <changefreq>weekly</changefreq>
+        <priority>0.8</priority>
+    </url>
+    
+    <url>
+        <loc>https://chatwii.com/guide/online-privacy-tips</loc>
+        <lastmod>2025-01-09T12:00:00+00:00</lastmod>
+        <changefreq>weekly</changefreq>
+        <priority>0.7</priority>
+    </url>
+    
+    <!-- Location-based pages (Examples for future expansion) -->
+    <url>
+        <loc>https://chatwii.com/chat/united-states</loc>
+        <lastmod>2025-01-09T12:00:00+00:00</lastmod>
+        <changefreq>weekly</changefreq>
+        <priority>0.7</priority>
+    </url>
+    
+    <url>
+        <loc>https://chatwii.com/chat/united-kingdom</loc>
+        <lastmod>2025-01-09T12:00:00+00:00</lastmod>
+        <changefreq>weekly</changefreq>
+        <priority>0.7</priority>
+    </url>
+    
+    <url>
+        <loc>https://chatwii.com/chat/canada</loc>
+        <lastmod>2025-01-09T12:00:00+00:00</lastmod>
+        <changefreq>weekly</changefreq>
+        <priority>0.7</priority>
+    </url>
+    
+    <!-- FAQ Pages -->
+    <url>
+        <loc>https://chatwii.com/faq/anonymous-chat</loc>
+        <lastmod>2025-01-09T12:00:00+00:00</lastmod>
+        <changefreq>monthly</changefreq>
+        <priority>0.6</priority>
+    </url>
+    
+    <url>
+        <loc>https://chatwii.com/faq/safety-features</loc>
+        <lastmod>2025-01-09T12:00:00+00:00</lastmod>
+        <changefreq>monthly</changefreq>
+        <priority>0.6</priority>
+    </url>
+    
+</urlset>

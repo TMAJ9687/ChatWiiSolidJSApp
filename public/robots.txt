@@ -1,0 +1,153 @@
+# Robots.txt for ChatWii - Anonymous Chat Platform
+# https://chatwii.com/robots.txt
+
+# Allow all well-behaved web crawlers
+User-agent: *
+Allow: /
+
+# Specific rules for major search engines
+User-agent: Googlebot
+Allow: /
+Crawl-delay: 1
+
+User-agent: Bingbot
+Allow: /
+Crawl-delay: 1
+
+User-agent: Slurp
+Allow: /
+Crawl-delay: 2
+
+User-agent: DuckDuckBot
+Allow: /
+Crawl-delay: 1
+
+User-agent: Baiduspider
+Allow: /
+Crawl-delay: 2
+
+User-agent: YandexBot
+Allow: /
+Crawl-delay: 2
+
+User-agent: facebookexternalhit
+Allow: /
+
+User-agent: Twitterbot
+Allow: /
+
+User-agent: LinkedInBot
+Allow: /
+
+User-agent: WhatsApp
+Allow: /
+
+# Disallow admin and private areas
+Disallow: /admin/
+Disallow: /sys/
+Disallow: /api/
+Disallow: /_/
+Disallow: /temp/
+Disallow: /tmp/
+
+# Disallow chat sessions (private user data)
+Disallow: /chat/room/
+Disallow: /chat/private/
+Disallow: /user/*/profile/private
+
+# Allow important pages for SEO
+Allow: /about
+Allow: /privacy
+Allow: /safety
+Allow: /how-it-works
+Allow: /feedback
+
+# Allow language-specific pages
+Allow: /es/
+Allow: /fr/
+Allow: /de/
+Allow: /zh/
+Allow: /ja/
+Allow: /ar/
+Allow: /hi/
+Allow: /pt/
+Allow: /ru/
+Allow: /it/
+Allow: /ko/
+Allow: /tr/
+
+# Allow topic and location pages
+Allow: /guide/
+Allow: /faq/
+Allow: /chat/*/
+Allow: /help/
+
+# Block aggressive crawlers and bad bots
+User-agent: AhrefsBot
+Crawl-delay: 10
+
+User-agent: SemrushBot
+Crawl-delay: 10
+
+User-agent: MJ12bot
+Crawl-delay: 5
+
+User-agent: DotBot
+Crawl-delay: 5
+
+# Block known scraping bots
+User-agent: HTTrack
+Disallow: /
+
+User-agent: ia_archiver
+Disallow: /
+
+User-agent: ScreamingFrog
+Disallow: /
+
+User-agent: SiteAuditBot
+Disallow: /
+
+# Block ChatGPT bot (opt out of AI training)
+User-agent: ChatGPT-User
+Disallow: /
+
+User-agent: CCBot
+Disallow: /
+
+User-agent: anthropic-ai
+Disallow: /
+
+User-agent: Claude-Web
+Disallow: /
+
+# Sitemap locations
+Sitemap: https://chatwii.com/sitemap.xml
+Sitemap: https://chatwii.com/sitemap-images.xml
+Sitemap: https://chatwii.com/sitemap-news.xml
+
+# Host directive (for Yandex and others)
+Host: chatwii.com
+
+# Request rate (requests per second)
+Request-rate: 1/1
+
+# Visit times (prefer crawling during off-peak hours UTC)
+Visit-time: 0100-0600
+
+# Clean URLs directive
+Clean-param: utm_source
+Clean-param: utm_medium  
+Clean-param: utm_campaign
+Clean-param: utm_content
+Clean-param: utm_term
+Clean-param: fbclid
+Clean-param: gclid
+Clean-param: ref
+Clean-param: source
+
+# Noindex for dynamic/testing pages
+Noindex: /test/
+Noindex: /staging/
+Noindex: /dev/
+Noindex: /preview/
