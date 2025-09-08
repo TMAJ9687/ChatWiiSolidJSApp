@@ -6,29 +6,26 @@ interface CountryInfo {
 }
 
 export async function detectCountry(): Promise<CountryInfo> {
+  // Skip Cloudflare API endpoint since it's not implemented yet
+  // When you have a backend endpoint, uncomment and modify this:
+  /*
   try {
-    // Try to detect country using Cloudflare headers via a simple request
     const response = await fetch('/api/country').catch(() => null);
-    
     if (response?.ok) {
       const data = await response.json();
       let code = data.country || 'US';
-      
-      // Special mapping: Israel -> Palestine as per existing code
       if (code.toUpperCase() === 'IL') {
         code = 'PS';
       }
-      
-      code = code.toUpperCase();
-      
       return {
-        code,
-        name: getCountryName(code)
+        code: code.toUpperCase(),
+        name: getCountryName(code.toUpperCase())
       };
     }
   } catch (error) {
-    console.error('Country detection failed:', error);
+    // Continue to fallbacks
   }
+  */
 
   // Fallback: Try IPAPI for country detection
   try {
@@ -50,7 +47,7 @@ export async function detectCountry(): Promise<CountryInfo> {
       }
     }
   } catch (error) {
-    console.error('IPAPI country detection failed:', error);
+    // IPAPI failed, continue to next fallback
   }
 
   // Fallback: Try to detect from browser timezone
@@ -64,7 +61,7 @@ export async function detectCountry(): Promise<CountryInfo> {
       };
     }
   } catch (error) {
-    console.error('Timezone-based country detection failed:', error);
+    // Timezone detection failed, continue to fallback
   }
   
   // Final fallback to US
