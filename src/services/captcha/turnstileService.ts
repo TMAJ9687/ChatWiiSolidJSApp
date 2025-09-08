@@ -83,7 +83,7 @@ class TurnstileService {
   }
 
   /**
-   * Load Turnstile script
+   * Load Turnstile script with enhanced compatibility
    */
   private loadScript(): Promise<void> {
     return new Promise((resolve, reject) => {
@@ -93,21 +93,105 @@ class TurnstileService {
         resolve();
         return;
       }
+
+      // Check browser compatibility first
+      if (!this.isBrowserCompatible()) {
+        reject(new Error('Browser not compatible with Turnstile'));
+        return;
+      }
+
       const script = document.createElement('script');
       script.src = 'https://challenges.cloudflare.com/turnstile/v0/api.js';
-      // Note: Turnstile requires sync loading when using turnstile.ready()
+      script.type = 'text/javascript';
+      
+      // Enhanced loading with multiple fallback mechanisms
+      let loadTimeout: NodeJS.Timeout;
+      
+      const cleanup = () => {
+        if (loadTimeout) clearTimeout(loadTimeout);
+      };
 
       script.onload = () => {
+        cleanup();
         this.isLoaded = true;
         resolve();
       };
 
       script.onerror = () => {
-        reject(new Error('Failed to load Turnstile script'));
+        cleanup();
+        reject(new Error('Failed to load Turnstile script - network or CDN issue'));
       };
+
+      // 30-second timeout for script loading
+      loadTimeout = setTimeout(() => {
+        cleanup();
+        reject(new Error('Turnstile script loading timed out after 30 seconds'));
+      }, 30000);
 
       document.head.appendChild(script);
     });
+  }
+
+  /**
+   * Check if browser is compatible with Turnstile
+   */
+  private isBrowserCompatible(): boolean {
+    // Check for essential features
+    if (typeof window === 'undefined') return false;
+    if (typeof document === 'undefined') return false;
+    if (typeof fetch === 'undefined') return false;
+    if (typeof Promise === 'undefined') return false;
+    
+    // Check for DOM manipulation capabilities
+    if (!document.createElement || !document.head || !document.getElementById) {
+      return false;
+    }
+
+    // Check for modern JS features required by Turnstile
+    try {
+      // Check if browser supports modern features
+      eval('const test = () => {};'); // Arrow functions
+      eval('let test2 = {};'); // let/const
+    } catch (e) {
+      return false;
+    }
+
+    return true;
+  }
+
+  /**
+   * Detect if user is on mobile device
+   */
+  private isMobileDevice(): boolean {
+    // Check user agent for mobile indicators
+    const userAgent = navigator.userAgent || '';
+    const isMobileUA = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(userAgent);
+    
+    // Check screen size
+    const isSmallScreen = window.innerWidth <= 768;
+    
+    // Check touch capability
+    const isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+    
+    return isMobileUA || (isSmallScreen && isTouchDevice);
+  }
+
+  /**
+   * Detect user's preferred theme
+   */
+  private detectPreferredTheme(): 'light' | 'dark' {
+    // Check for dark mode preference
+    if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+      return 'dark';
+    }
+    
+    // Check if dark mode is enabled in the app
+    if (document.documentElement.classList.contains('dark') || 
+        document.body.classList.contains('dark')) {
+      return 'dark';
+    }
+    
+    return 'light';
   }
 
   /**
@@ -179,21 +263,33 @@ class TurnstileService {
         return false;
       }
 
-      // Set up error timeout - if widget doesn't load in 15 seconds, fail
+      // Detect mobile/device-specific settings
+      const isMobile = this.isMobileDevice();
+      const widgetSize = isMobile ? 'compact' : (options.size || 'normal');
+      const widgetTheme = options.theme || this.detectPreferredTheme();
+
+      // Set up error timeout - if widget doesn't load in 20 seconds, fail
       const errorTimeout = setTimeout(() => {
         callbacks.onError();
-      }, 15000);
+      }, 20000);
 
-      // Enhanced render with error catching
-      this.widgetId = window.turnstile!.render(element, {
+      // Enhanced render with device-specific optimizations
+      const renderOptions = {
         sitekey: this.siteKey,
-        theme: options.theme || 'light',
-        size: options.size || 'normal',
+        theme: widgetTheme,
+        size: widgetSize,
         callback: successCallback,
         'expired-callback': expiredCallback,
         'error-callback': errorCallback,
+        // Mobile optimizations
+        ...(isMobile && {
+          'refresh-expired': 'auto',
+          'retry': 'auto'
+        }),
         ...options,
-      });
+      };
+
+      this.widgetId = window.turnstile!.render(element, renderOptions);
 
       // Clear timeout if successful
       clearTimeout(errorTimeout);

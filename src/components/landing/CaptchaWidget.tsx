@@ -101,14 +101,14 @@ const CaptchaWidget: Component<CaptchaWidgetProps> = (props) => {
   };
 
   return (
-    <div class="w-full flex justify-center">
+    <div class="w-full flex flex-col items-center space-y-2">
       {isLoaded() ? (
-        <div class="text-sm text-green-600 dark:text-green-400 text-center bg-green-50 dark:bg-green-900/20 px-3 py-2 rounded-lg">
+        <div class="text-sm text-green-600 dark:text-green-400 text-center bg-green-50 dark:bg-green-900/20 px-3 py-2 rounded-lg max-w-full">
           ✓ CAPTCHA verification completed
         </div>
       ) : hasError() ? (
-        <div class="space-y-3">
-          <div class="text-sm text-red-500 dark:text-red-400 text-center bg-red-50 dark:bg-red-900/20 px-3 py-2 rounded-lg">
+        <div class="space-y-3 w-full max-w-sm">
+          <div class="text-sm text-red-500 dark:text-red-400 text-center bg-red-50 dark:bg-red-900/20 px-3 py-2 rounded-lg break-words">
             {errorMessage() || 'CAPTCHA unavailable. Please try again later.'}
           </div>
           {showFallback() && (
@@ -118,7 +118,7 @@ const CaptchaWidget: Component<CaptchaWidgetProps> = (props) => {
               </p>
               <button
                 onClick={handleFallbackSkip}
-                class="px-4 py-2 bg-yellow-600 hover:bg-yellow-700 text-white text-sm rounded-lg font-medium transition-colors"
+                class="px-4 py-2 bg-yellow-600 hover:bg-yellow-700 text-white text-sm rounded-lg font-medium transition-colors w-full sm:w-auto"
               >
                 Skip CAPTCHA (Technical Issues)
               </button>
@@ -126,12 +126,26 @@ const CaptchaWidget: Component<CaptchaWidgetProps> = (props) => {
           )}
         </div>
       ) : (
-        <div 
-          id="turnstile-widget" 
-          class={`transition-opacity duration-300 ${
-            isLoaded() ? 'opacity-100' : 'opacity-50'
-          }`}
-        />
+        <div class="w-full flex justify-center">
+          <div 
+            id="turnstile-widget" 
+            class={`transition-opacity duration-300 max-w-full overflow-hidden ${
+              isLoaded() ? 'opacity-100' : 'opacity-50'
+            }`}
+            style={{
+              // Ensure widget doesn't overflow on small screens
+              'max-width': '100%',
+              'width': 'auto'
+            }}
+          />
+        </div>
+      )}
+      
+      {/* Loading indicator for better UX */}
+      {!isLoaded() && !hasError() && (
+        <div class="text-xs text-text-500 dark:text-text-400 text-center animate-pulse">
+          Loading CAPTCHA...
+        </div>
       )}
     </div>
   );

@@ -6,27 +6,33 @@ interface CountryInfo {
 }
 
 export async function detectCountry(): Promise<CountryInfo> {
-  // Primary: Try Cloudflare headers via Netlify function
-  try {
-    const response = await fetch('/api/country').catch(() => null);
-    if (response?.ok) {
-      const data = await response.json();
-      if (data.country) {
-        let code = data.country.toUpperCase();
-        
-        // Special mapping: Israel -> Palestine as per existing code
-        if (code === 'IL') {
-          code = 'PS';
+  // Primary: Try Cloudflare headers via Netlify function (only when deployed)
+  if (window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') {
+    try {
+      const response = await fetch('/api/country', {
+        method: 'GET',
+        headers: { 'Accept': 'application/json' }
+      }).catch(() => null);
+      
+      if (response?.ok) {
+        const data = await response.json();
+        if (data.country) {
+          let code = data.country.toUpperCase();
+          
+          // Special mapping: Israel -> Palestine as per existing code
+          if (code === 'IL') {
+            code = 'PS';
+          }
+          
+          return {
+            code,
+            name: getCountryName(code)
+          };
         }
-        
-        return {
-          code,
-          name: getCountryName(code)
-        };
       }
+    } catch (error) {
+      // Silently continue to IPAPI fallback
     }
-  } catch (error) {
-    // Continue to IPAPI fallback
   }
 
   // Secondary: Try IPAPI for country detection
