@@ -21,7 +21,7 @@ const GenderSelection: Component<GenderSelectionProps> = (props) => {
                       : "border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-800"
                   }`}
         >
-          <span class="font-medium">Male</span>
+          <span class="font-medium text-text-900 dark:text-text-100">Male</span>
         </button>
         <button
           onClick={() => props.onChange("female")}
@@ -32,7 +32,7 @@ const GenderSelection: Component<GenderSelectionProps> = (props) => {
                       : "border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-800"
                   }`}
         >
-          <span class="font-medium">Female</span>
+          <span class="font-medium text-text-900 dark:text-text-100">Female</span>
         </button>
       </div>
     </div>
