@@ -13,8 +13,11 @@ interface UserListItemProps {
 
 const UserListItem: Component<UserListItemProps> = (props) => {
   let touchStartY = 0;
+  let touchStartX = 0;
   let touchStartTime = 0;
   let hasMoved = false;
+  let isTouchDevice = false;
+  let shouldPreventClick = false;
 
   const getFlagSrc = (country: string) => {
     if (!country) return "/flags/us.svg";
@@ -26,38 +29,65 @@ const UserListItem: Component<UserListItemProps> = (props) => {
     return gender === "male" ? "text-blue-500" : "text-pink-500";
   };
 
-  const handleClick = () => {
+  const handleClick = (e: MouseEvent) => {
+    // Prevent click if this was from a touch interaction or if touch detected scrolling
+    if (shouldPreventClick || isTouchDevice) {
+      e.preventDefault();
+      e.stopPropagation();
+      return;
+    }
+    
     if (!props.isCurrentUser) {
       props.onClick();
     }
   };
 
   const handleTouchStart = (e: TouchEvent) => {
+    isTouchDevice = true;
+    shouldPreventClick = false;
     touchStartY = e.touches[0].clientY;
+    touchStartX = e.touches[0].clientX;
     touchStartTime = Date.now();
     hasMoved = false;
   };
 
   const handleTouchMove = (e: TouchEvent) => {
     const currentY = e.touches[0].clientY;
+    const currentX = e.touches[0].clientX;
     const deltaY = Math.abs(currentY - touchStartY);
+    const deltaX = Math.abs(currentX - touchStartX);
     
-    if (deltaY > 10) {
+    // More sensitive movement detection - any significant movement is scrolling
+    if (deltaY > 5 || deltaX > 5) {
       hasMoved = true;
+      shouldPreventClick = true;
     }
   };
 
   const handleTouchEnd = (e: TouchEvent) => {
     const touchDuration = Date.now() - touchStartTime;
     
-    // Only trigger click if:
-    // 1. Touch was quick (less than 300ms)
-    // 2. User didn't move much (no scrolling)
-    // 3. User is not the current user
-    if (!hasMoved && touchDuration < 300 && !props.isCurrentUser) {
+    // If user moved or touch was too long, prevent any click
+    if (hasMoved || touchDuration > 200) {
+      shouldPreventClick = true;
+      // Prevent the follow-up click event that mobile browsers fire
+      setTimeout(() => {
+        shouldPreventClick = false;
+      }, 300);
+      return;
+    }
+    
+    // This was a genuine tap - trigger selection
+    if (!props.isCurrentUser) {
       e.preventDefault();
+      e.stopPropagation();
       props.onClick();
     }
+    
+    // Reset after a short delay to prevent accidental clicks
+    setTimeout(() => {
+      shouldPreventClick = false;
+    }, 50);
   };
 
   return (

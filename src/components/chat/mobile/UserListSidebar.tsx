@@ -455,7 +455,7 @@ const UserListSidebar: Component<UserListSidebarProps> = (props) => {
 
 
 
-      <div class="flex-1 overflow-y-auto py-1">
+      <div class="flex-1 overflow-y-auto py-1" style="touch-action: pan-y; -webkit-overflow-scrolling: touch;">
         <For each={filteredUsers()}>
           {(user) => (
             <UserListItem
