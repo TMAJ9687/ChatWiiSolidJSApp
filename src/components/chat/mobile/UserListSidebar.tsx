@@ -32,6 +32,7 @@ const UserListSidebar: Component<UserListSidebarProps> = (props) => {
   const [touchStartTime, setTouchStartTime] = createSignal(0);
   const [hasMoved, setHasMoved] = createSignal(false);
   const [isTouchDevice, setIsTouchDevice] = createSignal(false);
+  const [touchTarget, setTouchTarget] = createSignal<EventTarget | null>(null);
   const [filters, setFilters] = createSignal<FilterOptions>({
     genders: new Set(['male', 'female']),
     ageMin: 18,
@@ -285,6 +286,7 @@ const UserListSidebar: Component<UserListSidebarProps> = (props) => {
     setTouchStartTime(Date.now());
     setHasMoved(false);
     setIsScrolling(false); // Reset scroll state
+    setTouchTarget(e.target); // Track what element was initially touched
     if (scrollTimer) clearTimeout(scrollTimer);
   };
 
@@ -305,6 +307,7 @@ const UserListSidebar: Component<UserListSidebarProps> = (props) => {
     setTimeout(() => {
       setHasMoved(false);
       setIsScrolling(false);
+      setTouchTarget(null); // Clear the touch target
     }, 100);
   };
 
@@ -525,6 +528,7 @@ const UserListSidebar: Component<UserListSidebarProps> = (props) => {
               isBlockedBy={usersWhoBlockedMe().includes(user.id)}
               isScrolling={isScrolling()}
               hasMoved={hasMoved()}
+              touchTarget={touchTarget()}
             />
           )}
         </For>

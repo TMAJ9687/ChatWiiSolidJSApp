@@ -12,9 +12,11 @@ interface UserListItemProps {
   isBlockedBy?: boolean;
   isScrolling?: boolean;
   hasMoved?: boolean;
+  touchTarget?: EventTarget | null;
 }
 
 const UserListItem: Component<UserListItemProps> = (props) => {
+  let itemRef: HTMLDivElement | undefined;
 
   const getFlagSrc = (country: string) => {
     if (!country) return "/flags/us.svg";
@@ -26,40 +28,28 @@ const UserListItem: Component<UserListItemProps> = (props) => {
     return gender === "male" ? "text-blue-500" : "text-pink-500";
   };
 
-  const handleClick = (e: MouseEvent | TouchEvent) => {
-    // Block click if we detected movement or scrolling
+  // Handle touchEnd - only respond if this was the original touch target
+  const handleTouchEnd = (e: TouchEvent) => {
+    // Only process if this element (or its children) was the initial touch target
+    if (props.touchTarget && itemRef && !itemRef.contains(props.touchTarget as Node)) {
+      return; // This wasn't the originally touched item
+    }
+
     if (props.isScrolling || props.hasMoved) {
       e.preventDefault();
       e.stopPropagation();
       return;
     }
     
-    // For touch events, add an extra check
-    if (e.type === 'click' && 'touches' in window) {
-      // On touch devices, we might want a small delay
-      // to ensure touch tracking has completed
-      if (props.hasMoved) {
-        e.preventDefault();
-        e.stopPropagation();
-        return;
-      }
-    }
-
     if (!props.isCurrentUser) {
       props.onClick();
     }
   };
 
-  // Alternative: Use onPointerUp for better control
-  const handlePointerUp = (e: PointerEvent) => {
-    // Only respond to primary button (touch or left click)
-    if (e.button !== 0) return;
-    
-    if (props.isScrolling || props.hasMoved) {
-      e.preventDefault();
-      e.stopPropagation();
-      return;
-    }
+  // Keep a simple click handler for mouse users
+  const handleClick = (e: MouseEvent) => {
+    // Only handle actual mouse clicks, not touch-triggered clicks
+    if (e.detail === 0) return; // This is a programmatic or touch click
     
     if (!props.isCurrentUser) {
       props.onClick();
@@ -69,7 +59,9 @@ const UserListItem: Component<UserListItemProps> = (props) => {
   return (
     <div class="px-1 py-0.5">
       <div
-        onPointerUp={handlePointerUp}
+        ref={itemRef}
+        onTouchEnd={handleTouchEnd}
+        onClick={handleClick}
         class={`w-full p-3 flex items-center gap-3 rounded-xl border transition-all duration-200 relative
                 ${styles["user-list-item"]}
                 ${props.user.role === "admin" 
