@@ -1,7 +1,7 @@
 import { Component, Show } from "solid-js";
 import { FiSlash, FiUserX } from "solid-icons/fi";
 import type { User } from "../../../types/user.types";
-import styles from "./UserListItem.module.css";
+// import styles from "./UserListItem.module.css"; // Temporarily disabled for debugging
 
 interface UserListItemProps {
   user: User;
@@ -25,27 +25,8 @@ const UserListItem: Component<UserListItemProps> = (props) => {
   return (
     <div class="px-1 py-0.5">
       <div
-        class={`w-full p-3 flex items-center gap-3 rounded-xl border transition-all duration-200 relative
-                ${styles["user-list-item"]}
-                ${props.user.role === "admin" 
-                  ? props.isSelected
-                    ? "bg-gradient-to-r from-yellow-50 to-amber-50 dark:from-yellow-900/20 dark:to-amber-900/20 border-yellow-300 dark:border-yellow-600 shadow-lg shadow-yellow-200/50 dark:shadow-yellow-900/30"
-                    : "bg-gradient-to-r from-yellow-25 to-amber-25 dark:from-yellow-900/10 dark:to-amber-900/10 border-yellow-200 dark:border-yellow-700 hover:border-yellow-300 dark:hover:border-yellow-600 hover:shadow-md hover:shadow-yellow-200/30"
-                  : props.user.role === "vip"
-                  ? props.isSelected
-                    ? "bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20 border-purple-300 dark:border-purple-600 shadow-lg shadow-purple-200/50 dark:shadow-purple-900/30"
-                    : "bg-gradient-to-r from-purple-25 to-pink-25 dark:from-purple-900/10 dark:to-pink-900/10 border-purple-200 dark:border-purple-700 hover:border-purple-300 dark:hover:border-purple-600 hover:shadow-md hover:shadow-purple-200/30"
-                  : props.isSelected 
-                    ? "bg-secondary-50 dark:bg-secondary-900/20 border-secondary-200 dark:border-secondary-700 shadow-sm" 
-                    : "bg-white dark:bg-neutral-800 border-neutral-200 dark:border-neutral-700 hover:bg-neutral-50 dark:hover:bg-neutral-700/50 hover:shadow-sm"
-                }
-                ${
-                  props.isCurrentUser
-                    ? "opacity-50 cursor-not-allowed"
-                    : "cursor-pointer hover:scale-[1.02]"
-                }
-                ${props.isBlocked ? "opacity-60 bg-red-50 dark:bg-red-900/10 border-red-200 dark:border-red-800" : ""}
-                ${props.isBlockedBy ? "opacity-60 bg-yellow-50 dark:bg-yellow-900/10 border-yellow-200 dark:border-yellow-800" : ""}`}
+        class="w-full p-3 flex items-center gap-3 border bg-white dark:bg-neutral-800"
+        style="touch-action: inherit;" // Completely neutral
       >
       <div class={`rounded-full p-0.5 ${props.user.gender === 'male' ? 'ring-2 ring-blue-500' : 'ring-2 ring-pink-500'}`}>
         <img

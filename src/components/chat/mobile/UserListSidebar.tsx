@@ -280,6 +280,13 @@ const UserListSidebar: Component<UserListSidebarProps> = (props) => {
 
   const handleContainerTouchStart = (e: TouchEvent) => {
     const userItem = (e.target as HTMLElement).closest('[data-user-id]');
+    console.log('🟢 TouchStart:', {
+      target: e.target,
+      userItem: userItem,
+      userId: userItem?.getAttribute('data-user-id'),
+      clientY: e.touches[0].clientY
+    });
+    
     if (userItem) {
       setSelectedTouchTarget(userItem as HTMLElement);
       setTouchStartY(e.touches[0].clientY);
@@ -292,8 +299,15 @@ const UserListSidebar: Component<UserListSidebarProps> = (props) => {
   const handleContainerTouchMove = (e: TouchEvent) => {
     const moveThreshold = 5;
     const currentY = e.touches[0].clientY;
+    const deltaY = Math.abs(currentY - touchStartY());
     
-    if (Math.abs(currentY - touchStartY()) > moveThreshold) {
+    if (deltaY > moveThreshold) {
+      console.log('🔄 TouchMove - Movement detected:', {
+        deltaY,
+        threshold: moveThreshold,
+        hasMoved: hasMoved(),
+        isScrolling: isScrolling()
+      });
       setHasMoved(true);
       setIsScrolling(true);
     }
@@ -301,11 +315,25 @@ const UserListSidebar: Component<UserListSidebarProps> = (props) => {
 
   const handleContainerTouchEnd = (e: TouchEvent) => {
     const userItem = (e.target as HTMLElement).closest('[data-user-id]');
+    const selectedTarget = selectedTouchTarget();
     
-    if (userItem && userItem === selectedTouchTarget() && !hasMoved()) {
+    console.log('🔴 TouchEnd:', {
+      target: e.target,
+      userItem: userItem,
+      userId: userItem?.getAttribute('data-user-id'),
+      selectedTarget,
+      selectedUserId: selectedTarget?.getAttribute('data-user-id'),
+      isSameElement: userItem === selectedTarget,
+      hasMoved: hasMoved(),
+      isScrolling: isScrolling(),
+      willTriggerClick: userItem && userItem === selectedTarget && !hasMoved()
+    });
+    
+    if (userItem && userItem === selectedTarget && !hasMoved()) {
       const userId = userItem.getAttribute('data-user-id');
       const user = filteredUsers().find(u => u.id === userId);
       if (user && user.id !== props.currentUser?.id) {
+        console.log('✅ Triggering user selection:', user.nickname);
         handleUserSelect(user);
       }
     }
