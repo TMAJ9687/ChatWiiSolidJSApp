@@ -28,6 +28,10 @@ const UserListSidebar: Component<UserListSidebarProps> = (props) => {
   const [searchQuery, setSearchQuery] = createSignal("");
   const [showFilterPopup, setShowFilterPopup] = createSignal(false);
   const [isScrolling, setIsScrolling] = createSignal(false);
+  const [touchStartY, setTouchStartY] = createSignal(0);
+  const [touchStartTime, setTouchStartTime] = createSignal(0);
+  const [hasMoved, setHasMoved] = createSignal(false);
+  const [isTouchDevice, setIsTouchDevice] = createSignal(false);
   const [filters, setFilters] = createSignal<FilterOptions>({
     genders: new Set(['male', 'female']),
     ageMin: 18,
@@ -275,10 +279,33 @@ const UserListSidebar: Component<UserListSidebarProps> = (props) => {
     }, 150); // Short delay to ensure scroll momentum is done
   };
 
-  const handleTouchStart = () => {
-    // Reset scrolling state when touch starts
+  const handleTouchStart = (e: TouchEvent) => {
+    setIsTouchDevice(true);
+    setTouchStartY(e.touches[0].clientY);
+    setTouchStartTime(Date.now());
+    setHasMoved(false);
+    setIsScrolling(false); // Reset scroll state
     if (scrollTimer) clearTimeout(scrollTimer);
-    setIsScrolling(false);
+  };
+
+  // Add new touch move handler - detects movement immediately
+  const handleTouchMove = (e: TouchEvent) => {
+    const moveThreshold = 5; // pixels - very sensitive to catch scroll intent early
+    const currentY = e.touches[0].clientY;
+    
+    if (Math.abs(currentY - touchStartY()) > moveThreshold) {
+      setHasMoved(true);
+      setIsScrolling(true); // Set scrolling immediately on movement
+    }
+  };
+
+  // Add touch end handler
+  const handleTouchEnd = () => {
+    // Reset after a small delay to handle any pending clicks
+    setTimeout(() => {
+      setHasMoved(false);
+      setIsScrolling(false);
+    }, 100);
   };
 
   // Mobile overlay handling
@@ -484,6 +511,8 @@ const UserListSidebar: Component<UserListSidebarProps> = (props) => {
         style="touch-action: pan-y; -webkit-overflow-scrolling: touch;"
         onScroll={handleScroll}
         onTouchStart={handleTouchStart}
+        onTouchMove={handleTouchMove}
+        onTouchEnd={handleTouchEnd}
       >
         <For each={filteredUsers()}>
           {(user) => (
@@ -495,6 +524,7 @@ const UserListSidebar: Component<UserListSidebarProps> = (props) => {
               isBlocked={blockedUsers().includes(user.id)}
               isBlockedBy={usersWhoBlockedMe().includes(user.id)}
               isScrolling={isScrolling()}
+              hasMoved={hasMoved()}
             />
           )}
         </For>

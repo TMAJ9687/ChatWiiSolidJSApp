@@ -1,0 +1,17 @@
+/* Touch handling enhancements for UserListItem */
+.user-list-item {
+  /* Disable 300ms tap delay on mobile */
+  touch-action: manipulation;
+  /* Prevent text selection during scroll */
+  -webkit-user-select: none;
+  user-select: none;
+  /* Remove tap highlight */
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Additional mobile optimizations */
+.user-list-item * {
+  /* Prevent text selection on all children */
+  -webkit-user-select: none;
+  user-select: none;
+}

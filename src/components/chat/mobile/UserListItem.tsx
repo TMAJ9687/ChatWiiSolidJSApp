@@ -1,6 +1,7 @@
 import { Component, Show } from "solid-js";
 import { FiSlash, FiUserX } from "solid-icons/fi";
 import type { User } from "../../../types/user.types";
+import styles from "./UserListItem.module.css";
 
 interface UserListItemProps {
   user: User;
@@ -10,6 +11,7 @@ interface UserListItemProps {
   isBlocked?: boolean;
   isBlockedBy?: boolean;
   isScrolling?: boolean;
+  hasMoved?: boolean;
 }
 
 const UserListItem: Component<UserListItemProps> = (props) => {
@@ -25,8 +27,35 @@ const UserListItem: Component<UserListItemProps> = (props) => {
   };
 
   const handleClick = (e: MouseEvent | TouchEvent) => {
-    // Prevent click if scrolling is detected from parent container
-    if (props.isScrolling) {
+    // Block click if we detected movement or scrolling
+    if (props.isScrolling || props.hasMoved) {
+      e.preventDefault();
+      e.stopPropagation();
+      return;
+    }
+    
+    // For touch events, add an extra check
+    if (e.type === 'click' && 'touches' in window) {
+      // On touch devices, we might want a small delay
+      // to ensure touch tracking has completed
+      if (props.hasMoved) {
+        e.preventDefault();
+        e.stopPropagation();
+        return;
+      }
+    }
+
+    if (!props.isCurrentUser) {
+      props.onClick();
+    }
+  };
+
+  // Alternative: Use onPointerUp for better control
+  const handlePointerUp = (e: PointerEvent) => {
+    // Only respond to primary button (touch or left click)
+    if (e.button !== 0) return;
+    
+    if (props.isScrolling || props.hasMoved) {
       e.preventDefault();
       e.stopPropagation();
       return;
@@ -40,8 +69,9 @@ const UserListItem: Component<UserListItemProps> = (props) => {
   return (
     <div class="px-1 py-0.5">
       <div
-        onClick={handleClick}
+        onPointerUp={handlePointerUp}
         class={`w-full p-3 flex items-center gap-3 rounded-xl border transition-all duration-200 relative
+                ${styles["user-list-item"]}
                 ${props.user.role === "admin" 
                   ? props.isSelected
                     ? "bg-gradient-to-r from-yellow-50 to-amber-50 dark:from-yellow-900/20 dark:to-amber-900/20 border-yellow-300 dark:border-yellow-600 shadow-lg shadow-yellow-200/50 dark:shadow-yellow-900/30"
