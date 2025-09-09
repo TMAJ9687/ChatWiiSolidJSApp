@@ -12,6 +12,10 @@ interface UserListItemProps {
 }
 
 const UserListItem: Component<UserListItemProps> = (props) => {
+  let touchStartY = 0;
+  let touchStartTime = 0;
+  let hasMoved = false;
+
   const getFlagSrc = (country: string) => {
     if (!country) return "/flags/us.svg";
     const code = country.toLowerCase();
@@ -28,12 +32,41 @@ const UserListItem: Component<UserListItemProps> = (props) => {
     }
   };
 
+  const handleTouchStart = (e: TouchEvent) => {
+    touchStartY = e.touches[0].clientY;
+    touchStartTime = Date.now();
+    hasMoved = false;
+  };
+
+  const handleTouchMove = (e: TouchEvent) => {
+    const currentY = e.touches[0].clientY;
+    const deltaY = Math.abs(currentY - touchStartY);
+    
+    if (deltaY > 10) {
+      hasMoved = true;
+    }
+  };
+
+  const handleTouchEnd = (e: TouchEvent) => {
+    const touchDuration = Date.now() - touchStartTime;
+    
+    // Only trigger click if:
+    // 1. Touch was quick (less than 300ms)
+    // 2. User didn't move much (no scrolling)
+    // 3. User is not the current user
+    if (!hasMoved && touchDuration < 300 && !props.isCurrentUser) {
+      e.preventDefault();
+      props.onClick();
+    }
+  };
+
   return (
     <div class="px-1 py-0.5">
       <div
-        onMouseDown={handleClick}
         onClick={handleClick}
-        onTouchStart={handleClick}
+        onTouchStart={handleTouchStart}
+        onTouchMove={handleTouchMove}
+        onTouchEnd={handleTouchEnd}
         class={`w-full p-3 flex items-center gap-3 rounded-xl border transition-all duration-200 relative
                 ${props.user.role === "admin" 
                   ? props.isSelected
