@@ -6,18 +6,12 @@ import styles from "./UserListItem.module.css";
 interface UserListItemProps {
   user: User;
   isSelected: boolean;
-  onClick: () => void;
   isCurrentUser: boolean;
   isBlocked?: boolean;
   isBlockedBy?: boolean;
-  isScrolling?: boolean;
-  hasMoved?: boolean;
-  touchTarget?: EventTarget | null;
 }
 
 const UserListItem: Component<UserListItemProps> = (props) => {
-  let itemRef: HTMLDivElement | undefined;
-
   const getFlagSrc = (country: string) => {
     if (!country) return "/flags/us.svg";
     const code = country.toLowerCase();
@@ -28,40 +22,9 @@ const UserListItem: Component<UserListItemProps> = (props) => {
     return gender === "male" ? "text-blue-500" : "text-pink-500";
   };
 
-  // Handle touchEnd - only respond if this was the original touch target
-  const handleTouchEnd = (e: TouchEvent) => {
-    // Only process if this element (or its children) was the initial touch target
-    if (props.touchTarget && itemRef && !itemRef.contains(props.touchTarget as Node)) {
-      return; // This wasn't the originally touched item
-    }
-
-    if (props.isScrolling || props.hasMoved) {
-      e.preventDefault();
-      e.stopPropagation();
-      return;
-    }
-    
-    if (!props.isCurrentUser) {
-      props.onClick();
-    }
-  };
-
-  // Keep a simple click handler for mouse users
-  const handleClick = (e: MouseEvent) => {
-    // Only handle actual mouse clicks, not touch-triggered clicks
-    if (e.detail === 0) return; // This is a programmatic or touch click
-    
-    if (!props.isCurrentUser) {
-      props.onClick();
-    }
-  };
-
   return (
     <div class="px-1 py-0.5">
       <div
-        ref={itemRef}
-        onTouchEnd={handleTouchEnd}
-        onClick={handleClick}
         class={`w-full p-3 flex items-center gap-3 rounded-xl border transition-all duration-200 relative
                 ${styles["user-list-item"]}
                 ${props.user.role === "admin" 

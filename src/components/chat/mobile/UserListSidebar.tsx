@@ -29,10 +29,8 @@ const UserListSidebar: Component<UserListSidebarProps> = (props) => {
   const [showFilterPopup, setShowFilterPopup] = createSignal(false);
   const [isScrolling, setIsScrolling] = createSignal(false);
   const [touchStartY, setTouchStartY] = createSignal(0);
-  const [touchStartTime, setTouchStartTime] = createSignal(0);
   const [hasMoved, setHasMoved] = createSignal(false);
-  const [isTouchDevice, setIsTouchDevice] = createSignal(false);
-  const [touchTarget, setTouchTarget] = createSignal<EventTarget | null>(null);
+  const [selectedTouchTarget, setSelectedTouchTarget] = createSignal<HTMLElement | null>(null);
   const [filters, setFilters] = createSignal<FilterOptions>({
     genders: new Set(['male', 'female']),
     ageMin: 18,
@@ -280,34 +278,44 @@ const UserListSidebar: Component<UserListSidebarProps> = (props) => {
     }, 150); // Short delay to ensure scroll momentum is done
   };
 
-  const handleTouchStart = (e: TouchEvent) => {
-    setIsTouchDevice(true);
-    setTouchStartY(e.touches[0].clientY);
-    setTouchStartTime(Date.now());
-    setHasMoved(false);
-    setIsScrolling(false); // Reset scroll state
-    setTouchTarget(e.target); // Track what element was initially touched
+  const handleContainerTouchStart = (e: TouchEvent) => {
+    const userItem = (e.target as HTMLElement).closest('[data-user-id]');
+    if (userItem) {
+      setSelectedTouchTarget(userItem as HTMLElement);
+      setTouchStartY(e.touches[0].clientY);
+      setHasMoved(false);
+      setIsScrolling(false);
+    }
     if (scrollTimer) clearTimeout(scrollTimer);
   };
 
-  // Add new touch move handler - detects movement immediately
-  const handleTouchMove = (e: TouchEvent) => {
-    const moveThreshold = 5; // pixels - very sensitive to catch scroll intent early
+  const handleContainerTouchMove = (e: TouchEvent) => {
+    const moveThreshold = 5;
     const currentY = e.touches[0].clientY;
     
     if (Math.abs(currentY - touchStartY()) > moveThreshold) {
       setHasMoved(true);
-      setIsScrolling(true); // Set scrolling immediately on movement
+      setIsScrolling(true);
     }
   };
 
-  // Add touch end handler
-  const handleTouchEnd = () => {
-    // Reset after a small delay to handle any pending clicks
+  const handleContainerTouchEnd = (e: TouchEvent) => {
+    const userItem = (e.target as HTMLElement).closest('[data-user-id]');
+    
+    if (userItem && userItem === selectedTouchTarget() && !hasMoved()) {
+      const userId = userItem.getAttribute('data-user-id');
+      const user = filteredUsers().find(u => u.id === userId);
+      if (user && user.id !== props.currentUser?.id) {
+        handleUserSelect(user);
+      }
+    }
+    
+    setSelectedTouchTarget(null);
+    
+    // Reset states after a delay
     setTimeout(() => {
       setHasMoved(false);
       setIsScrolling(false);
-      setTouchTarget(null); // Clear the touch target
     }, 100);
   };
 
@@ -513,23 +521,21 @@ const UserListSidebar: Component<UserListSidebarProps> = (props) => {
         class="flex-1 overflow-y-auto py-1" 
         style="touch-action: pan-y; -webkit-overflow-scrolling: touch;"
         onScroll={handleScroll}
-        onTouchStart={handleTouchStart}
-        onTouchMove={handleTouchMove}
-        onTouchEnd={handleTouchEnd}
+        onTouchStart={handleContainerTouchStart}
+        onTouchMove={handleContainerTouchMove}
+        onTouchEnd={handleContainerTouchEnd}
       >
         <For each={filteredUsers()}>
           {(user) => (
-            <UserListItem
-              user={user}
-              isSelected={props.selectedUser?.id === user.id}
-              onClick={() => handleUserSelect(user)}
-              isCurrentUser={props.currentUser?.id === user.id}
-              isBlocked={blockedUsers().includes(user.id)}
-              isBlockedBy={usersWhoBlockedMe().includes(user.id)}
-              isScrolling={isScrolling()}
-              hasMoved={hasMoved()}
-              touchTarget={touchTarget()}
-            />
+            <div data-user-id={user.id}>
+              <UserListItem
+                user={user}
+                isSelected={props.selectedUser?.id === user.id}
+                isCurrentUser={props.currentUser?.id === user.id}
+                isBlocked={blockedUsers().includes(user.id)}
+                isBlockedBy={usersWhoBlockedMe().includes(user.id)}
+              />
+            </div>
           )}
         </For>
         </div>
