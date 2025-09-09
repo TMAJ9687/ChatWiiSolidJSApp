@@ -27,6 +27,7 @@ const UserListSidebar: Component<UserListSidebarProps> = (props) => {
   const [usersWhoBlockedMe, setUsersWhoBlockedMe] = createSignal<string[]>([]);
   const [searchQuery, setSearchQuery] = createSignal("");
   const [showFilterPopup, setShowFilterPopup] = createSignal(false);
+  const [isScrolling, setIsScrolling] = createSignal(false);
   const [filters, setFilters] = createSignal<FilterOptions>({
     genders: new Set(['male', 'female']),
     ageMin: 18,
@@ -35,6 +36,8 @@ const UserListSidebar: Component<UserListSidebarProps> = (props) => {
   });
 
   let filterRef: HTMLDivElement | undefined;
+  let scrollContainer: HTMLDivElement | undefined;
+  let scrollTimer: NodeJS.Timeout | null = null;
 
   // Load blocked users and set up real-time updates
   createEffect(async () => {
@@ -256,7 +259,27 @@ const UserListSidebar: Component<UserListSidebarProps> = (props) => {
 
   onCleanup(() => {
     document.removeEventListener('click', handleClickOutside);
+    if (scrollTimer) clearTimeout(scrollTimer);
   });
+
+  // Handle scroll events to detect when user is scrolling
+  const handleScroll = () => {
+    setIsScrolling(true);
+    
+    // Clear existing timer
+    if (scrollTimer) clearTimeout(scrollTimer);
+    
+    // Set timer to stop scrolling detection after scroll ends
+    scrollTimer = setTimeout(() => {
+      setIsScrolling(false);
+    }, 150); // Short delay to ensure scroll momentum is done
+  };
+
+  const handleTouchStart = () => {
+    // Reset scrolling state when touch starts
+    if (scrollTimer) clearTimeout(scrollTimer);
+    setIsScrolling(false);
+  };
 
   // Mobile overlay handling
   const handleUserSelect = (user: User) => {
@@ -455,7 +478,13 @@ const UserListSidebar: Component<UserListSidebarProps> = (props) => {
 
 
 
-      <div class="flex-1 overflow-y-auto py-1" style="touch-action: pan-y; -webkit-overflow-scrolling: touch;">
+      <div 
+        ref={scrollContainer}
+        class="flex-1 overflow-y-auto py-1" 
+        style="touch-action: pan-y; -webkit-overflow-scrolling: touch;"
+        onScroll={handleScroll}
+        onTouchStart={handleTouchStart}
+      >
         <For each={filteredUsers()}>
           {(user) => (
             <UserListItem
@@ -465,6 +494,7 @@ const UserListSidebar: Component<UserListSidebarProps> = (props) => {
               isCurrentUser={props.currentUser?.id === user.id}
               isBlocked={blockedUsers().includes(user.id)}
               isBlockedBy={usersWhoBlockedMe().includes(user.id)}
+              isScrolling={isScrolling()}
             />
           )}
         </For>

@@ -658,7 +658,7 @@ const ChatArea: Component<ChatAreaProps> = (props) => {
   };
 
   return (
-    <div class="flex-1 flex flex-col bg-neutral-50 dark:bg-neutral-900 max-w-full min-w-0 overflow-hidden">
+    <div class="flex-1 flex flex-col bg-neutral-50 dark:bg-neutral-900 max-w-full min-w-0 h-full">
       <Show
         when={props.selectedUser}
         fallback={
