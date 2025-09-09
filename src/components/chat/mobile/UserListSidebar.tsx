@@ -280,12 +280,6 @@ const UserListSidebar: Component<UserListSidebarProps> = (props) => {
 
   const handleContainerTouchStart = (e: TouchEvent) => {
     const userItem = (e.target as HTMLElement).closest('[data-user-id]');
-    console.log('🟢 TouchStart:', {
-      target: e.target,
-      userItem: userItem,
-      userId: userItem?.getAttribute('data-user-id'),
-      clientY: e.touches[0].clientY
-    });
     
     if (userItem) {
       setSelectedTouchTarget(userItem as HTMLElement);
@@ -302,12 +296,6 @@ const UserListSidebar: Component<UserListSidebarProps> = (props) => {
     const deltaY = Math.abs(currentY - touchStartY());
     
     if (deltaY > moveThreshold) {
-      console.log('🔄 TouchMove - Movement detected:', {
-        deltaY,
-        threshold: moveThreshold,
-        hasMoved: hasMoved(),
-        isScrolling: isScrolling()
-      });
       setHasMoved(true);
       setIsScrolling(true);
     }
@@ -317,23 +305,10 @@ const UserListSidebar: Component<UserListSidebarProps> = (props) => {
     const userItem = (e.target as HTMLElement).closest('[data-user-id]');
     const selectedTarget = selectedTouchTarget();
     
-    console.log('🔴 TouchEnd:', {
-      target: e.target,
-      userItem: userItem,
-      userId: userItem?.getAttribute('data-user-id'),
-      selectedTarget,
-      selectedUserId: selectedTarget?.getAttribute('data-user-id'),
-      isSameElement: userItem === selectedTarget,
-      hasMoved: hasMoved(),
-      isScrolling: isScrolling(),
-      willTriggerClick: userItem && userItem === selectedTarget && !hasMoved()
-    });
-    
     if (userItem && userItem === selectedTarget && !hasMoved()) {
       const userId = userItem.getAttribute('data-user-id');
       const user = filteredUsers().find(u => u.id === userId);
       if (user && user.id !== props.currentUser?.id) {
-        console.log('✅ Triggering user selection:', user.nickname);
         handleUserSelect(user);
       }
     }
@@ -547,7 +522,7 @@ const UserListSidebar: Component<UserListSidebarProps> = (props) => {
       <div 
         ref={scrollContainer}
         class="flex-1 overflow-y-auto py-1" 
-        style="touch-action: pan-y; -webkit-overflow-scrolling: touch;"
+        style="touch-action: pan-y; -webkit-overflow-scrolling: touch; overscroll-behavior-y: contain;"
         onScroll={handleScroll}
         onTouchStart={handleContainerTouchStart}
         onTouchMove={handleContainerTouchMove}
@@ -559,9 +534,12 @@ const UserListSidebar: Component<UserListSidebarProps> = (props) => {
               <UserListItem
                 user={user}
                 isSelected={props.selectedUser?.id === user.id}
+                onClick={() => handleUserSelect(user)}
                 isCurrentUser={props.currentUser?.id === user.id}
                 isBlocked={blockedUsers().includes(user.id)}
                 isBlockedBy={usersWhoBlockedMe().includes(user.id)}
+                isScrolling={isScrolling()}
+                hasMoved={hasMoved()}
               />
             </div>
           )}

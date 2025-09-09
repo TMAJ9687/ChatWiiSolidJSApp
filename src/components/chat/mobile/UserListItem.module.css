@@ -1,7 +1,7 @@
 /* Touch handling enhancements for UserListItem */
 .user-list-item {
-  /* Disable 300ms tap delay on mobile */
-  touch-action: manipulation;
+  /* Match parent container to avoid conflicts */
+  touch-action: pan-y;
   /* Prevent text selection during scroll */
   -webkit-user-select: none;
   user-select: none;
