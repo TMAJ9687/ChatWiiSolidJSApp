@@ -375,51 +375,33 @@ class ManualCleanupService {
         };
       }
 
-      // Fix standard ghost users (set offline)
-      const standardGhosts = ghostAnalysis.ghostUsers.filter(u => u.role === 'standard');
-      if (standardGhosts.length > 0) {
-        details.push(`🔧 Setting ${standardGhosts.length} standard ghost users offline...`);
-        
-        const { error: standardError } = await supabase
-          .from("users")
-          .update({ 
-            online: false,
-            last_seen: new Date().toISOString()
-          })
-          .in("id", standardGhosts.map(u => u.id));
+      // Fix users one by one to avoid RLS conflicts
+      for (const ghost of ghostAnalysis.ghostUsers) {
+        try {
+          details.push(`🔧 Fixing ghost user: ${ghost.nickname} (${ghost.role})`);
+          
+          const { error } = await supabase
+            .from("users")
+            .update({ 
+              online: false,
+              last_seen: new Date().toISOString()
+            })
+            .eq("id", ghost.id);
 
-        if (standardError) {
-          details.push(`❌ Error fixing standard ghosts: ${standardError.message}`);
-        } else {
-          details.push(`✅ Fixed ${standardGhosts.length} standard ghost users`);
-          fixedCount += standardGhosts.length;
-        }
-      }
-
-      // Fix VIP/Admin ghost users (set offline but preserve)
-      const premiumGhosts = ghostAnalysis.ghostUsers.filter(u => u.role === 'vip' || u.role === 'admin');
-      if (premiumGhosts.length > 0) {
-        details.push(`🔧 Setting ${premiumGhosts.length} VIP/Admin ghost users offline...`);
-        
-        const { error: premiumError } = await supabase
-          .from("users")
-          .update({ 
-            online: false,
-            last_seen: new Date().toISOString()
-          })
-          .in("id", premiumGhosts.map(u => u.id));
-
-        if (premiumError) {
-          details.push(`❌ Error fixing premium ghosts: ${premiumError.message}`);
-        } else {
-          details.push(`✅ Fixed ${premiumGhosts.length} VIP/Admin ghost users (preserved accounts)`);
-          fixedCount += premiumGhosts.length;
+          if (error) {
+            details.push(`❌ Error fixing ${ghost.nickname}: ${error.message}`);
+          } else {
+            details.push(`✅ Fixed ${ghost.nickname}`);
+            fixedCount++;
+          }
+        } catch (userError) {
+          details.push(`❌ Error processing ${ghost.nickname}: ${userError.message || 'Unknown error'}`);
         }
       }
 
       return {
         success: true,
-        message: `Fixed ${fixedCount} ghost users`,
+        message: `Fixed ${fixedCount}/${ghostAnalysis.ghostCount} ghost users`,
         fixedCount,
         details
       };
@@ -548,10 +530,30 @@ class ManualCleanupService {
     deletedCount: number;
   }> {
     try {
-      const { data, error } = await supabase
+      // First get count of records to delete
+      const { data: existingRecords, error: countError } = await supabase
+        .from("presence")
+        .select("user_id", { count: 'exact' });
+
+      if (countError) {
+        throw new Error(`Cannot access presence table: ${countError.message}`);
+      }
+
+      const recordCount = existingRecords?.length || 0;
+
+      if (recordCount === 0) {
+        return {
+          success: true,
+          message: "No presence records to clear",
+          deletedCount: 0
+        };
+      }
+
+      // Delete all records using proper syntax
+      const { error } = await supabase
         .from("presence")
         .delete()
-        .neq("user_id", ""); // Delete all records
+        .gte("last_seen", "1970-01-01"); // Match all records with valid timestamps
 
       if (error) {
         throw error;
@@ -560,7 +562,7 @@ class ManualCleanupService {
       return {
         success: true,
         message: "All presence records cleared",
-        deletedCount: (data as any)?.length || 0
+        deletedCount: recordCount
       };
 
     } catch (error) {
