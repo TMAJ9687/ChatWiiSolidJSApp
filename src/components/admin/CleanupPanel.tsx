@@ -1,5 +1,6 @@
 import { createSignal, createEffect, onMount } from "solid-js";
 import { cleanupService, type CleanupStats, type CleanupResult, type CleanupLog } from "../../services/supabase/cleanupService";
+import { manualCleanupService } from "../../services/supabase/manualCleanupService";
 
 export function CleanupPanel() {
   const [stats, setStats] = createSignal<CleanupStats>({
@@ -14,6 +15,9 @@ export function CleanupPanel() {
   const [isAutomaticActive, setIsAutomaticActive] = createSignal(false);
   const [message, setMessage] = createSignal<{ type: 'success' | 'error' | 'info', text: string } | null>(null);
   const [enhancedCleanupResult, setEnhancedCleanupResult] = createSignal<string>('');
+  const [manualCleanupLogs, setManualCleanupLogs] = createSignal<string[]>([]);
+  const [userStats, setUserStats] = createSignal<any>(null);
+  const [cleanupInProgress, setCleanupInProgress] = createSignal<boolean>(false);
 
   // Load initial data
   onMount(() => {
@@ -119,6 +123,101 @@ export function CleanupPanel() {
     } catch (error) {
       setEnhancedCleanupResult(`Enhanced cleanup failed: ${error.message || 'Unknown error'}`);
       setMessage({ type: 'error', text: 'Enhanced cleanup test failed' });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Manual cleanup functions
+  const loadUserStats = async () => {
+    try {
+      const stats = await manualCleanupService.getAllUsers();
+      setUserStats(stats);
+    } catch (error) {
+      setMessage({ type: 'error', text: `Failed to load user stats: ${error.message}` });
+    }
+  };
+
+  const runTestCleanup = async () => {
+    try {
+      setIsLoading(true);
+      const logs = await manualCleanupService.testCleanup();
+      setManualCleanupLogs(logs);
+      await loadUserStats();
+      setMessage({ type: 'info', text: 'Cleanup test completed - check logs below' });
+    } catch (error) {
+      setMessage({ type: 'error', text: `Test cleanup failed: ${error.message}` });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const runManualCleanup = async () => {
+    if (!confirm('Are you sure you want to clean up offline standard users? This will permanently delete their data!')) {
+      return;
+    }
+
+    try {
+      setCleanupInProgress(true);
+      setIsLoading(true);
+      const result = await manualCleanupService.cleanupOfflineStandardUsers();
+      
+      if (result.success) {
+        setMessage({ 
+          type: 'success', 
+          text: `${result.message} - ${result.deletedCount} users deleted` 
+        });
+        setManualCleanupLogs(result.details);
+      } else {
+        setMessage({ type: 'error', text: result.message });
+        setManualCleanupLogs(result.details);
+      }
+      
+      await loadUserStats();
+      await loadData();
+    } catch (error) {
+      setMessage({ type: 'error', text: `Manual cleanup failed: ${error.message}` });
+    } finally {
+      setCleanupInProgress(false);
+      setIsLoading(false);
+    }
+  };
+
+  const forceUsersOffline = async () => {
+    if (!confirm('Force all standard users offline? This will immediately disconnect all standard users.')) {
+      return;
+    }
+
+    try {
+      setIsLoading(true);
+      const result = await manualCleanupService.forceAllStandardUsersOffline();
+      setMessage({ 
+        type: result.success ? 'success' : 'error', 
+        text: result.message 
+      });
+      await loadUserStats();
+    } catch (error) {
+      setMessage({ type: 'error', text: `Failed to force users offline: ${error.message}` });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const clearAllPresence = async () => {
+    if (!confirm('Clear ALL presence records? This is a nuclear option that will clear the entire presence table!')) {
+      return;
+    }
+
+    try {
+      setIsLoading(true);
+      const result = await manualCleanupService.clearAllPresence();
+      setMessage({ 
+        type: result.success ? 'success' : 'error', 
+        text: result.message 
+      });
+      await loadUserStats();
+    } catch (error) {
+      setMessage({ type: 'error', text: `Failed to clear presence: ${error.message}` });
     } finally {
       setIsLoading(false);
     }
@@ -277,6 +376,116 @@ export function CleanupPanel() {
                 ))}
               </tbody>
             </table>
+          </div>
+        )}
+      </div>
+
+      {/* Manual Cleanup Control Panel */}
+      <div class="mt-8 bg-red-50 border border-red-200 rounded-lg p-6">
+        <h3 class="text-lg font-medium mb-4 text-red-900">🔧 Manual Cleanup Control Panel</h3>
+        <p class="text-sm text-red-700 mb-4">
+          Direct database cleanup tools with detailed logging. Use these tools to manually clean up users and test the cleanup system.
+        </p>
+        
+        {/* User Statistics */}
+        <div class="mb-6">
+          <button
+            onClick={loadUserStats}
+            disabled={isLoading()}
+            class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50 mb-4"
+          >
+            Load User Statistics
+          </button>
+          
+          {userStats() && (
+            <div class="grid grid-cols-1 md:grid-cols-5 gap-4 mb-4">
+              <div class="bg-gray-100 p-3 rounded">
+                <h4 class="text-sm font-medium text-gray-700">Total Users</h4>
+                <p class="text-xl font-bold text-gray-900">{userStats().totalUsers}</p>
+              </div>
+              <div class="bg-green-100 p-3 rounded">
+                <h4 class="text-sm font-medium text-green-700">Online</h4>
+                <p class="text-xl font-bold text-green-800">{userStats().onlineUsers}</p>
+              </div>
+              <div class="bg-blue-100 p-3 rounded">
+                <h4 class="text-sm font-medium text-blue-700">Standard</h4>
+                <p class="text-xl font-bold text-blue-800">{userStats().standardUsers}</p>
+              </div>
+              <div class="bg-purple-100 p-3 rounded">
+                <h4 class="text-sm font-medium text-purple-700">VIP</h4>
+                <p class="text-xl font-bold text-purple-800">{userStats().vipUsers}</p>
+              </div>
+              <div class="bg-yellow-100 p-3 rounded">
+                <h4 class="text-sm font-medium text-yellow-700">Admin</h4>
+                <p class="text-xl font-bold text-yellow-800">{userStats().adminUsers}</p>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Manual Cleanup Actions */}
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+          <div class="space-y-2">
+            <button
+              onClick={runTestCleanup}
+              disabled={isLoading()}
+              class="w-full px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50"
+            >
+              🔍 Test Cleanup (Safe)
+            </button>
+            <p class="text-xs text-gray-600">Analyze what would be cleaned up without making changes</p>
+          </div>
+
+          <div class="space-y-2">
+            <button
+              onClick={runManualCleanup}
+              disabled={isLoading() || cleanupInProgress()}
+              class="w-full px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 disabled:opacity-50"
+            >
+              {cleanupInProgress() ? '🔄 Cleaning...' : '🗑️ Clean Offline Standard Users'}
+            </button>
+            <p class="text-xs text-gray-600">Permanently delete offline standard users and their data</p>
+          </div>
+
+          <div class="space-y-2">
+            <button
+              onClick={forceUsersOffline}
+              disabled={isLoading()}
+              class="w-full px-4 py-2 bg-orange-600 text-white rounded hover:bg-orange-700 disabled:opacity-50"
+            >
+              ⚡ Force Standard Users Offline
+            </button>
+            <p class="text-xs text-gray-600">Immediately disconnect all standard users (keeps accounts)</p>
+          </div>
+
+          <div class="space-y-2">
+            <button
+              onClick={clearAllPresence}
+              disabled={isLoading()}
+              class="w-full px-4 py-2 bg-gray-800 text-white rounded hover:bg-gray-900 disabled:opacity-50"
+            >
+              💥 Clear All Presence (Nuclear)
+            </button>
+            <p class="text-xs text-gray-600">Clear entire presence table - use only in emergencies</p>
+          </div>
+        </div>
+
+        {/* Cleanup Logs */}
+        {manualCleanupLogs().length > 0 && (
+          <div class="mt-6 bg-gray-50 border border-gray-200 rounded p-4">
+            <h4 class="text-sm font-medium text-gray-900 mb-2">Cleanup Logs:</h4>
+            <div class="text-xs font-mono text-gray-700 max-h-64 overflow-y-auto premium-scrollbar">
+              {manualCleanupLogs().map((log, index) => (
+                <div key={index} class={`py-1 ${
+                  log.includes('❌') ? 'text-red-600' :
+                  log.includes('✅') || log.includes('✓') ? 'text-green-600' :
+                  log.includes('Warning') ? 'text-yellow-600' :
+                  'text-gray-700'
+                }`}>
+                  {log}
+                </div>
+              ))}
+            </div>
           </div>
         )}
       </div>

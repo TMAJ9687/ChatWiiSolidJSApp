@@ -23,6 +23,13 @@ const App: Component = () => {
     } catch (error) {
       console.warn('Failed to start automatic cleanup:', error);
     }
+
+    // Load debug utilities for console testing
+    try {
+      await import('./utils/debugCleanup');
+    } catch (error) {
+      console.warn('Failed to load debug utilities:', error);
+    }
   });
 
   onCleanup(() => {
