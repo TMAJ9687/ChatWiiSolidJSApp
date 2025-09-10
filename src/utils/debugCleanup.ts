@@ -1,5 +1,6 @@
 import { supabase } from "../config/supabase";
 import { manualCleanupService } from "../services/supabase/manualCleanupService";
+import { serverCleanupService } from "../services/supabase/serverCleanupService";
 
 /**
  * Debug cleanup utilities for console testing
@@ -20,6 +21,10 @@ declare global {
       findGhosts: () => Promise<void>;
       fixGhosts: () => Promise<void>;
       cleanupGhosts: () => Promise<void>;
+      // Server-side functions (with elevated permissions)
+      serverFixGhosts: () => Promise<void>;
+      serverStats: () => Promise<void>;
+      serverCleanup: () => Promise<void>;
     };
   }
 }
@@ -168,6 +173,53 @@ const debugCleanup = {
     console.log(`✅ Result: ${result.message}`);
     console.log(`📊 Deleted: ${result.deletedCount} users`);
     result.details.forEach(detail => console.log(detail));
+  },
+
+  /**
+   * SERVER-SIDE: Fix ghost users using elevated permissions (RECOMMENDED)
+   */
+  async serverFixGhosts() {
+    console.log("🛠️ SERVER: Fixing ghost users with elevated permissions...");
+    const result = await serverCleanupService.fixGhostUsers();
+    console.log(`✅ Server Result: ${result.message}`);
+    console.log(`📊 Ghost Users: ${result.ghostCount}`);
+    console.log(`📊 Fixed: ${result.fixedCount}`);
+    console.log(`🕐 Timestamp: ${result.timestamp}`);
+  },
+
+  /**
+   * SERVER-SIDE: Get comprehensive user stats with elevated permissions
+   */
+  async serverStats() {
+    console.log("📊 SERVER: Getting comprehensive user statistics...");
+    try {
+      const stats = await serverCleanupService.getUserStats();
+      console.log("📊 User Statistics:");
+      console.table({
+        'Total Users': stats.totalUsers,
+        'Online Users': stats.onlineUsers,
+        'Standard Users': stats.standardUsers,
+        'Standard Online': stats.standardOnline,
+        'VIP Users': stats.vipUsers,
+        'Admin Users': stats.adminUsers,
+        'Presence Records': stats.presenceRecords,
+        'Ghost Users': stats.ghostUsers
+      });
+      console.log(`🕐 Server Timestamp: ${stats.timestamp}`);
+    } catch (error) {
+      console.error("❌ Server stats error:", error.message);
+    }
+  },
+
+  /**
+   * SERVER-SIDE: Cleanup offline standard users with elevated permissions
+   */
+  async serverCleanup() {
+    console.log("🛠️ SERVER: Cleaning up offline standard users with elevated permissions...");
+    const result = await serverCleanupService.cleanupOfflineStandardUsers();
+    console.log(`✅ Server Result: ${result.message}`);
+    console.log(`📊 Deleted: ${result.deletedCount} users`);
+    console.log(`🕐 Timestamp: ${result.timestamp}`);
   }
 };
 
@@ -175,17 +227,26 @@ const debugCleanup = {
 if (typeof window !== 'undefined') {
   window.debugCleanup = debugCleanup;
   console.log("🚀 Debug cleanup utilities loaded! Available commands:");
-  console.log("- window.debugCleanup.checkUsers() - Check current users");
+  console.log("📊 STATISTICS:");
+  console.log("- window.debugCleanup.checkUsers() - Check current users (client-side)");
+  console.log("- window.debugCleanup.serverStats() - 🛠️ SERVER: Complete stats (RECOMMENDED)");
   console.log("- window.debugCleanup.checkPresence() - Check presence records");
   console.log("- window.debugCleanup.testCleanup() - Run safe test");
-  console.log("- window.debugCleanup.cleanupOfflineUsers() - Clean offline users (full)");
-  console.log("- window.debugCleanup.safeCleanup() - 🛡️ SAFE cleanup (essential tables only)");
+  console.log("");
+  console.log("🗑️ CLEANUP COMMANDS:");
+  console.log("- window.debugCleanup.serverCleanup() - 🛠️ SERVER: Clean offline users (RECOMMENDED)");
+  console.log("- window.debugCleanup.safeCleanup() - 🛡️ Client: SAFE cleanup (essential tables only)");
+  console.log("- window.debugCleanup.cleanupOfflineUsers() - Client: Clean offline users (full)");
   console.log("- window.debugCleanup.forceOffline() - Force users offline");
   console.log("- window.debugCleanup.clearPresence() - Clear all presence");
+  console.log("");
   console.log("👻 GHOST USER COMMANDS:");
-  console.log("- window.debugCleanup.findGhosts() - Find ghost users (marked online but no presence)");
-  console.log("- window.debugCleanup.fixGhosts() - Fix ghost users (set offline) - RECOMMENDED!");
+  console.log("- window.debugCleanup.findGhosts() - Find ghost users (client-side)");
+  console.log("- window.debugCleanup.serverFixGhosts() - 🛠️ SERVER: Fix ghost users (RECOMMENDED!)");
+  console.log("- window.debugCleanup.fixGhosts() - Client: Fix ghost users (may fail with RLS)");
   console.log("- window.debugCleanup.cleanupGhosts() - Delete ghost users completely");
+  console.log("");
+  console.log("🛠️ TIP: Use SERVER commands (serverStats, serverFixGhosts, serverCleanup) for reliable results!");
 }
 
 export default debugCleanup;
