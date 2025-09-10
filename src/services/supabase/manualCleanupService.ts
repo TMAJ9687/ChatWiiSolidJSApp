@@ -142,21 +142,8 @@ class ManualCleanupService {
             details.push(`Warning: Messages table access failed for ${user.nickname}: ${error.message}`);
           }
 
-          // 2. Delete conversations (with corrected syntax and error handling)
-          try {
-            const { error: conversationsError } = await supabase
-              .from("conversations")
-              .delete()
-              .or(`user1_id.eq.${user.id},user2_id.eq.${user.id}`);
-
-            if (conversationsError) {
-              details.push(`Warning: Error deleting conversations for ${user.nickname}: ${conversationsError.message}`);
-            } else {
-              details.push(`✓ Deleted conversations for ${user.nickname}`);
-            }
-          } catch (error) {
-            details.push(`Warning: Conversations table access failed for ${user.nickname}: ${error.message}`);
-          }
+          // 2. Delete conversations - Note: No conversations table exists, messages ARE the conversations
+          // Skip this step as conversations are derived from messages
 
           // 3. Delete blocks (with error handling)
           try {
@@ -457,8 +444,7 @@ class ManualCleanupService {
 
           // Delete user's data with individual error handling
           const cleanupTasks = [
-            { name: 'messages', table: 'messages', condition: 'sender_id' },
-            { name: 'conversations', table: 'conversations', condition: 'or', value: `user1_id.eq.${ghost.id},user2_id.eq.${ghost.id}` },
+            { name: 'messages', table: 'messages', condition: 'or', value: `sender_id.eq.${ghost.id},receiver_id.eq.${ghost.id}` },
             { name: 'blocks', table: 'blocks', condition: 'or', value: `blocker_id.eq.${ghost.id},blocked_id.eq.${ghost.id}` },
             { name: 'reports', table: 'reports', condition: 'or', value: `reporter_id.eq.${ghost.id},reported_user_id.eq.${ghost.id}` }
           ];

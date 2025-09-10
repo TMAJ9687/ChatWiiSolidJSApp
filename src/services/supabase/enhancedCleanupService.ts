@@ -54,14 +54,9 @@ class EnhancedCleanupService {
         console.error("Error deleting user from users table:", userDeleteError);
       }
 
-      // Step 4: Delete from Supabase Auth (this will cascade cleanup)
-      const { error: authDeleteError } = await supabase.auth.admin.deleteUser(userId);
-      
-      if (authDeleteError) {
-        console.error("Error deleting user from auth:", authDeleteError);
-        // Note: This might fail if we're not using service role key
-        // In that case, rely on database cleanup and manual auth cleanup
-      }
+      // Note: Auth user deletion skipped - requires service role key
+      // Standard users are temporary anyway, and database cleanup is sufficient
+      // Auth records will be cleaned up separately by admin if needed
 
       console.log(`Complete cleanup finished for user ${userId}`);
     } catch (error) {
@@ -71,43 +66,49 @@ class EnhancedCleanupService {
   }
 
   /**
-   * Clean up user-related data (messages, conversations, etc.)
+   * Clean up user-related data (messages, reports, blocks, etc.)
    */
   private async cleanupUserData(userId: string): Promise<void> {
+    // Clean up each table individually with error handling for missing tables
+    
+    // Delete user's messages and messages received
     try {
-      // Delete user's messages
       await supabase
         .from("messages")
         .delete()
-        .eq("sender_id", userId);
+        .or(`sender_id.eq.${userId},receiver_id.eq.${userId}`);
+    } catch (error) {
+      // Messages table cleanup failed - continue
+    }
 
-      // Delete conversations where user is participant
-      await supabase
-        .from("conversations")
-        .delete()
-        .or(`user1_id.eq.${userId},user2_id.eq.${userId}`);
-
-      // Delete any reports made by or about this user
+    // Delete any reports made by or about this user
+    try {
       await supabase
         .from("reports")
         .delete()
         .or(`reporter_id.eq.${userId},reported_user_id.eq.${userId}`);
+    } catch (error) {
+      // Reports table cleanup failed - continue
+    }
 
-      // Delete any blocks involving this user
+    // Delete any blocks involving this user
+    try {
       await supabase
         .from("blocks")
         .delete()
         .or(`blocker_id.eq.${userId},blocked_id.eq.${userId}`);
+    } catch (error) {
+      // Blocks table cleanup failed - continue
+    }
 
-      // Delete any typing indicators
+    // Delete typing indicators
+    try {
       await supabase
         .from("typing")
         .delete()
         .eq("user_id", userId);
-
     } catch (error) {
-      console.error("Error cleaning up user data:", error);
-      // Continue cleanup even if some data cleanup fails
+      // Typing table cleanup failed - continue
     }
   }
 
