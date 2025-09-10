@@ -20,7 +20,6 @@ class ServerCleanupService {
       const { data, error } = await supabase.rpc('fix_ghost_users');
 
       if (error) {
-        console.error('Error calling fix_ghost_users function:', error);
         return {
           success: false,
           message: `Database function error: ${error.message}`,
@@ -39,7 +38,6 @@ class ServerCleanupService {
       };
 
     } catch (error) {
-      console.error('Error in fixGhostUsers:', error);
       return {
         success: false,
         message: `Client error: ${error.message || 'Unknown error'}`,
@@ -68,7 +66,6 @@ class ServerCleanupService {
       const { data, error } = await supabase.rpc('get_user_stats');
 
       if (error) {
-        console.error('Error calling get_user_stats function:', error);
         throw new Error(`Database function error: ${error.message}`);
       }
 
@@ -85,7 +82,6 @@ class ServerCleanupService {
       };
 
     } catch (error) {
-      console.error('Error in getUserStats:', error);
       throw error;
     }
   }
@@ -103,7 +99,6 @@ class ServerCleanupService {
       const { data, error } = await supabase.rpc('cleanup_offline_standard_users');
 
       if (error) {
-        console.error('Error calling cleanup_offline_standard_users function:', error);
         return {
           success: false,
           message: `Database function error: ${error.message}`,
@@ -120,7 +115,6 @@ class ServerCleanupService {
       };
 
     } catch (error) {
-      console.error('Error in cleanupOfflineStandardUsers:', error);
       return {
         success: false,
         message: `Client error: ${error.message || 'Unknown error'}`,
@@ -138,7 +132,6 @@ class ServerCleanupService {
       await supabase.rpc('get_user_stats');
       return true;
     } catch (error) {
-      console.error('Server functions not available:', error);
       return false;
     }
   }

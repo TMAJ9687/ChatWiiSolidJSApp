@@ -53,7 +53,7 @@ class ManualCleanupService {
         users: users || []
       };
 
-      console.log("User stats:", stats);
+      // User stats retrieved successfully
       return stats;
     } catch (error) {
       console.error("Error in getAllUsers:", error);
@@ -76,7 +76,7 @@ class ManualCleanupService {
         throw error;
       }
 
-      console.log(`Found ${presence?.length || 0} presence records`);
+      // Found presence records
       return presence || [];
     } catch (error) {
       console.error("Error in getAllPresence:", error);

@@ -12,4 +12,15 @@ export default defineConfig({
   server: {
     port: 3000,
   },
+  build: {
+    minify: 'terser',
+    terserOptions: {
+      compress: {
+        // Remove most console statements in production but keep error logging
+        drop_console: false,
+        drop_debugger: true,
+        pure_funcs: ['console.log', 'console.info', 'console.debug', 'console.warn', 'console.table']
+      },
+    },
+  },
 });

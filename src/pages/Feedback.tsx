@@ -29,7 +29,6 @@ const Feedback: Component = () => {
         navigate("/");
       }, 3000);
     } catch (error) {
-      console.error("Error submitting feedback:", error);
       setErrorMessage("Failed to submit feedback. Please try again.");
     } finally {
       setIsSubmitting(false);

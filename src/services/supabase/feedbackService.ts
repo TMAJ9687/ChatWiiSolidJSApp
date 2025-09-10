@@ -226,6 +226,32 @@ export class FeedbackService {
   ): Promise<void> {
     await this.updateFeedback(feedbackId, { category, priority });
   }
+
+  /**
+   * Submit new feedback
+   */
+  async submitFeedback(feedback: {
+    email?: string;
+    feedback_text: string;
+    user_id?: string;
+    subject?: string;
+  }): Promise<void> {
+    const { error } = await supabase
+      .from('feedback')
+      .insert({
+        email: feedback.email,
+        message: feedback.feedback_text,
+        subject: feedback.subject || 'User Feedback',
+        user_id: feedback.user_id,
+        status: 'pending',
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      });
+
+    if (error) {
+      throw new Error(`Failed to submit feedback: ${error.message}`);
+    }
+  }
 }
 
 export const feedbackService = new FeedbackService();

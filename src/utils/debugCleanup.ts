@@ -223,30 +223,34 @@ const debugCleanup = {
   }
 };
 
-// Make it globally available
+// Make it globally available (development only)
 if (typeof window !== 'undefined') {
   window.debugCleanup = debugCleanup;
-  console.log("🚀 Debug cleanup utilities loaded! Available commands:");
-  console.log("📊 STATISTICS:");
-  console.log("- window.debugCleanup.checkUsers() - Check current users (client-side)");
-  console.log("- window.debugCleanup.serverStats() - 🛠️ SERVER: Complete stats (RECOMMENDED)");
-  console.log("- window.debugCleanup.checkPresence() - Check presence records");
-  console.log("- window.debugCleanup.testCleanup() - Run safe test");
-  console.log("");
-  console.log("🗑️ CLEANUP COMMANDS:");
-  console.log("- window.debugCleanup.serverCleanup() - 🛠️ SERVER: Clean offline users (RECOMMENDED)");
-  console.log("- window.debugCleanup.safeCleanup() - 🛡️ Client: SAFE cleanup (essential tables only)");
-  console.log("- window.debugCleanup.cleanupOfflineUsers() - Client: Clean offline users (full)");
-  console.log("- window.debugCleanup.forceOffline() - Force users offline");
-  console.log("- window.debugCleanup.clearPresence() - Clear all presence");
-  console.log("");
-  console.log("👻 GHOST USER COMMANDS:");
-  console.log("- window.debugCleanup.findGhosts() - Find ghost users (client-side)");
-  console.log("- window.debugCleanup.serverFixGhosts() - 🛠️ SERVER: Fix ghost users (RECOMMENDED!)");
-  console.log("- window.debugCleanup.fixGhosts() - Client: Fix ghost users (may fail with RLS)");
-  console.log("- window.debugCleanup.cleanupGhosts() - Delete ghost users completely");
-  console.log("");
-  console.log("🛠️ TIP: Use SERVER commands (serverStats, serverFixGhosts, serverCleanup) for reliable results!");
+  
+  // Only show debug messages in development mode
+  if (import.meta.env.DEV) {
+    console.log("🚀 Debug cleanup utilities loaded! Available commands:");
+    console.log("📊 STATISTICS:");
+    console.log("- window.debugCleanup.checkUsers() - Check current users (client-side)");
+    console.log("- window.debugCleanup.serverStats() - 🛠️ SERVER: Complete stats (RECOMMENDED)");
+    console.log("- window.debugCleanup.checkPresence() - Check presence records");
+    console.log("- window.debugCleanup.testCleanup() - Run safe test");
+    console.log("");
+    console.log("🗑️ CLEANUP COMMANDS:");
+    console.log("- window.debugCleanup.serverCleanup() - 🛠️ SERVER: Clean offline users (RECOMMENDED)");
+    console.log("- window.debugCleanup.safeCleanup() - 🛡️ Client: SAFE cleanup (essential tables only)");
+    console.log("- window.debugCleanup.cleanupOfflineUsers() - Client: Clean offline users (full)");
+    console.log("- window.debugCleanup.forceOffline() - Force users offline");
+    console.log("- window.debugCleanup.clearPresence() - Clear all presence");
+    console.log("");
+    console.log("👻 GHOST USER COMMANDS:");
+    console.log("- window.debugCleanup.findGhosts() - Find ghost users (client-side)");
+    console.log("- window.debugCleanup.serverFixGhosts() - 🛠️ SERVER: Fix ghost users (RECOMMENDED!)");
+    console.log("- window.debugCleanup.fixGhosts() - Client: Fix ghost users (may fail with RLS)");
+    console.log("- window.debugCleanup.cleanupGhosts() - Delete ghost users completely");
+    console.log("");
+    console.log("🛠️ TIP: Use SERVER commands (serverStats, serverFixGhosts, serverCleanup) for reliable results!");
+  }
 }
 
 export default debugCleanup;

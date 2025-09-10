@@ -19,16 +19,17 @@ const App: Component = () => {
     try {
       const { enhancedCleanupService } = await import('./services/supabase/enhancedCleanupService');
       cleanupInterval = enhancedCleanupService.startAutomaticCleanup();
-      console.log('Automatic cleanup service started');
     } catch (error) {
-      console.warn('Failed to start automatic cleanup:', error);
+      // Cleanup service failed to start - continue silently
     }
 
-    // Load debug utilities for console testing
-    try {
-      await import('./utils/debugCleanup');
-    } catch (error) {
-      console.warn('Failed to load debug utilities:', error);
+    // Load debug utilities for console testing (development only)
+    if (import.meta.env.DEV) {
+      try {
+        await import('./utils/debugCleanup');
+      } catch (error) {
+        // Debug utilities failed to load - continue silently
+      }
     }
   });
 
