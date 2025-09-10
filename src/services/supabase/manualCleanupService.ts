@@ -8,6 +8,21 @@ import { presenceService } from "./presenceService";
 class ManualCleanupService {
   
   /**
+   * Check which tables exist in the database
+   */
+  private async checkTableExists(tableName: string): Promise<boolean> {
+    try {
+      await supabase
+        .from(tableName)
+        .select("*")
+        .limit(0);
+      return true;
+    } catch (error) {
+      return false;
+    }
+  }
+
+  /**
    * Get all users currently in the users table with their status
    */
   async getAllUsers(): Promise<{
@@ -111,52 +126,68 @@ class ManualCleanupService {
         try {
           details.push(`Cleaning up user: ${user.nickname} (${user.id})`);
 
-          // 1. Delete user's messages
-          const { error: messagesError } = await supabase
-            .from("messages")
-            .delete()
-            .eq("sender_id", user.id);
+          // 1. Delete user's messages (with error handling)
+          try {
+            const { error: messagesError } = await supabase
+              .from("messages")
+              .delete()
+              .eq("sender_id", user.id);
 
-          if (messagesError) {
-            details.push(`Warning: Error deleting messages for ${user.nickname}: ${messagesError.message}`);
-          } else {
-            details.push(`✓ Deleted messages for ${user.nickname}`);
+            if (messagesError) {
+              details.push(`Warning: Error deleting messages for ${user.nickname}: ${messagesError.message}`);
+            } else {
+              details.push(`✓ Deleted messages for ${user.nickname}`);
+            }
+          } catch (error) {
+            details.push(`Warning: Messages table access failed for ${user.nickname}: ${error.message}`);
           }
 
-          // 2. Delete conversations
-          const { error: conversationsError } = await supabase
-            .from("conversations")
-            .delete()
-            .or(`user1_id.eq.${user.id},user2_id.eq.${user.id}`);
+          // 2. Delete conversations (with corrected syntax and error handling)
+          try {
+            const { error: conversationsError } = await supabase
+              .from("conversations")
+              .delete()
+              .or(`user1_id.eq.${user.id},user2_id.eq.${user.id}`);
 
-          if (conversationsError) {
-            details.push(`Warning: Error deleting conversations for ${user.nickname}: ${conversationsError.message}`);
-          } else {
-            details.push(`✓ Deleted conversations for ${user.nickname}`);
+            if (conversationsError) {
+              details.push(`Warning: Error deleting conversations for ${user.nickname}: ${conversationsError.message}`);
+            } else {
+              details.push(`✓ Deleted conversations for ${user.nickname}`);
+            }
+          } catch (error) {
+            details.push(`Warning: Conversations table access failed for ${user.nickname}: ${error.message}`);
           }
 
-          // 3. Delete blocks
-          const { error: blocksError } = await supabase
-            .from("blocks")
-            .delete()
-            .or(`blocker_id.eq.${user.id},blocked_id.eq.${user.id}`);
+          // 3. Delete blocks (with error handling)
+          try {
+            const { error: blocksError } = await supabase
+              .from("blocks")
+              .delete()
+              .or(`blocker_id.eq.${user.id},blocked_id.eq.${user.id}`);
 
-          if (blocksError) {
-            details.push(`Warning: Error deleting blocks for ${user.nickname}: ${blocksError.message}`);
-          } else {
-            details.push(`✓ Deleted blocks for ${user.nickname}`);
+            if (blocksError) {
+              details.push(`Warning: Error deleting blocks for ${user.nickname}: ${blocksError.message}`);
+            } else {
+              details.push(`✓ Deleted blocks for ${user.nickname}`);
+            }
+          } catch (error) {
+            details.push(`Warning: Blocks table access failed for ${user.nickname}: ${error.message}`);
           }
 
-          // 4. Delete reports
-          const { error: reportsError } = await supabase
-            .from("reports")
-            .delete()
-            .or(`reporter_id.eq.${user.id},reported_user_id.eq.${user.id}`);
+          // 4. Delete reports (with corrected syntax and error handling)
+          try {
+            const { error: reportsError } = await supabase
+              .from("reports")
+              .delete()
+              .or(`reporter_id.eq.${user.id},reported_user_id.eq.${user.id}`);
 
-          if (reportsError) {
-            details.push(`Warning: Error deleting reports for ${user.nickname}: ${reportsError.message}`);
-          } else {
-            details.push(`✓ Deleted reports for ${user.nickname}`);
+            if (reportsError) {
+              details.push(`Warning: Error deleting reports for ${user.nickname}: ${reportsError.message}`);
+            } else {
+              details.push(`✓ Deleted reports for ${user.nickname}`);
+            }
+          } catch (error) {
+            details.push(`Warning: Reports table access failed for ${user.nickname}: ${error.message}`);
           }
 
           // 5. Delete from presence
@@ -442,13 +473,35 @@ class ManualCleanupService {
         try {
           details.push(`🗑️ Deleting ghost user: ${ghost.nickname} (${ghost.id.substring(0, 8)}...)`);
 
-          // Delete user's data
-          await Promise.all([
-            supabase.from("messages").delete().eq("sender_id", ghost.id),
-            supabase.from("conversations").delete().or(`user1_id.eq.${ghost.id},user2_id.eq.${ghost.id}`),
-            supabase.from("blocks").delete().or(`blocker_id.eq.${ghost.id},blocked_id.eq.${ghost.id}`),
-            supabase.from("reports").delete().or(`reporter_id.eq.${ghost.id},reported_user_id.eq.${ghost.id}`)
-          ]);
+          // Delete user's data with individual error handling
+          const cleanupTasks = [
+            { name: 'messages', table: 'messages', condition: 'sender_id' },
+            { name: 'conversations', table: 'conversations', condition: 'or', value: `user1_id.eq.${ghost.id},user2_id.eq.${ghost.id}` },
+            { name: 'blocks', table: 'blocks', condition: 'or', value: `blocker_id.eq.${ghost.id},blocked_id.eq.${ghost.id}` },
+            { name: 'reports', table: 'reports', condition: 'or', value: `reporter_id.eq.${ghost.id},reported_user_id.eq.${ghost.id}` }
+          ];
+
+          for (const task of cleanupTasks) {
+            try {
+              let query = supabase.from(task.table).delete();
+              
+              if (task.condition === 'or') {
+                query = query.or(task.value);
+              } else {
+                query = query.eq(task.condition, ghost.id);
+              }
+              
+              const { error } = await query;
+              
+              if (error) {
+                details.push(`Warning: Error deleting ${task.name} for ${ghost.nickname}: ${error.message}`);
+              } else {
+                details.push(`✓ Deleted ${task.name} for ${ghost.nickname}`);
+              }
+            } catch (error) {
+              details.push(`Warning: ${task.table} table access failed for ${ghost.nickname}: ${error.message}`);
+            }
+          }
 
           // Delete the user
           const { error: userError } = await supabase
@@ -515,6 +568,96 @@ class ManualCleanupService {
         success: false,
         message: `Error clearing presence: ${error.message || 'Unknown error'}`,
         deletedCount: 0
+      };
+    }
+  }
+
+  /**
+   * Safe cleanup - only clean essential tables that we know exist
+   */
+  async safeCleanupOfflineUsers(): Promise<{
+    success: boolean;
+    message: string;
+    deletedCount: number;
+    details: string[];
+  }> {
+    const details: string[] = [];
+    let deletedCount = 0;
+
+    try {
+      details.push("🛡️ Starting SAFE cleanup (essential tables only)...");
+
+      // Get offline standard users
+      const { data: offlineStandardUsers, error } = await supabase
+        .from("users")
+        .select("*")
+        .eq("role", "standard")
+        .eq("online", false);
+
+      if (error) {
+        throw error;
+      }
+
+      if (!offlineStandardUsers || offlineStandardUsers.length === 0) {
+        return {
+          success: true,
+          message: "No offline standard users found to cleanup",
+          deletedCount: 0,
+          details: ["No offline standard users found"]
+        };
+      }
+
+      details.push(`Found ${offlineStandardUsers.length} offline standard users for safe cleanup`);
+
+      // Clean up each user (only essential operations)
+      for (const user of offlineStandardUsers) {
+        try {
+          details.push(`🛡️ Safe cleanup for: ${user.nickname} (${user.id.substring(0, 8)}...)`);
+
+          // Only clean presence and user record (skip potentially missing tables)
+          const { error: presenceError } = await supabase
+            .from("presence")
+            .delete()
+            .eq("user_id", user.id);
+
+          if (presenceError) {
+            details.push(`Warning: Error deleting presence for ${user.nickname}: ${presenceError.message}`);
+          } else {
+            details.push(`✓ Deleted presence for ${user.nickname}`);
+          }
+
+          // Delete the user record
+          const { error: userError } = await supabase
+            .from("users")
+            .delete()
+            .eq("id", user.id);
+
+          if (userError) {
+            details.push(`❌ Error deleting user ${user.nickname}: ${userError.message}`);
+          } else {
+            details.push(`✅ Successfully deleted user ${user.nickname} (safe mode)`);
+            deletedCount++;
+          }
+
+        } catch (userError) {
+          details.push(`❌ Error processing user ${user.nickname}: ${userError.message || 'Unknown error'}`);
+        }
+      }
+
+      return {
+        success: true,
+        message: `Safe cleanup completed: ${deletedCount}/${offlineStandardUsers.length} users deleted`,
+        deletedCount,
+        details
+      };
+
+    } catch (error) {
+      details.push(`❌ Fatal error during safe cleanup: ${error.message || 'Unknown error'}`);
+      return {
+        success: false,
+        message: `Safe cleanup failed: ${error.message || 'Unknown error'}`,
+        deletedCount,
+        details
       };
     }
   }

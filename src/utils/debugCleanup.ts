@@ -14,6 +14,7 @@ declare global {
       checkPresence: () => Promise<void>;
       testCleanup: () => Promise<void>;
       cleanupOfflineUsers: () => Promise<void>;
+      safeCleanup: () => Promise<void>;
       forceOffline: () => Promise<void>;
       clearPresence: () => Promise<void>;
       findGhosts: () => Promise<void>;
@@ -82,6 +83,22 @@ const debugCleanup = {
     const result = await manualCleanupService.cleanupOfflineStandardUsers();
     
     console.log(`✅ Cleanup result: ${result.message}`);
+    console.log(`📊 Deleted: ${result.deletedCount} users`);
+    
+    if (result.details.length > 0) {
+      console.log("📝 Detailed logs:");
+      result.details.forEach(detail => console.log(detail));
+    }
+  },
+
+  /**
+   * Safe cleanup - only essential tables
+   */
+  async safeCleanup() {
+    console.log("🛡️ Starting SAFE cleanup of offline standard users...");
+    const result = await manualCleanupService.safeCleanupOfflineUsers();
+    
+    console.log(`✅ Safe cleanup result: ${result.message}`);
     console.log(`📊 Deleted: ${result.deletedCount} users`);
     
     if (result.details.length > 0) {
@@ -161,12 +178,13 @@ if (typeof window !== 'undefined') {
   console.log("- window.debugCleanup.checkUsers() - Check current users");
   console.log("- window.debugCleanup.checkPresence() - Check presence records");
   console.log("- window.debugCleanup.testCleanup() - Run safe test");
-  console.log("- window.debugCleanup.cleanupOfflineUsers() - Clean offline users");
+  console.log("- window.debugCleanup.cleanupOfflineUsers() - Clean offline users (full)");
+  console.log("- window.debugCleanup.safeCleanup() - 🛡️ SAFE cleanup (essential tables only)");
   console.log("- window.debugCleanup.forceOffline() - Force users offline");
   console.log("- window.debugCleanup.clearPresence() - Clear all presence");
   console.log("👻 GHOST USER COMMANDS:");
   console.log("- window.debugCleanup.findGhosts() - Find ghost users (marked online but no presence)");
-  console.log("- window.debugCleanup.fixGhosts() - Fix ghost users (set offline)");
+  console.log("- window.debugCleanup.fixGhosts() - Fix ghost users (set offline) - RECOMMENDED!");
   console.log("- window.debugCleanup.cleanupGhosts() - Delete ghost users completely");
 }
 
