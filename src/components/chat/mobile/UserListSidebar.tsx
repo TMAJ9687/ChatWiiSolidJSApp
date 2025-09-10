@@ -397,7 +397,7 @@ const UserListSidebar: Component<UserListSidebarProps> = (props) => {
 
             {/* Filter Popup */}
             <Show when={showFilterPopup()}>
-              <div class="fixed top-16 right-4 w-80 bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 rounded-lg shadow-2xl z-[9999] max-h-[calc(100vh-5rem)] overflow-y-auto">
+              <div class="fixed top-16 right-4 w-80 bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 rounded-lg shadow-2xl z-[9999] max-h-[calc(100vh-5rem)] overflow-y-auto premium-scrollbar">
                 <div class="p-4 space-y-4">
                   {/* Header */}
                   <div class="flex items-center justify-between">
@@ -474,7 +474,7 @@ const UserListSidebar: Component<UserListSidebarProps> = (props) => {
                         ({filters().countries.size}/{props.currentUser?.role === 'standard' ? 2 : 10} selected)
                       </span>
                     </label>
-                    <div class="max-h-32 overflow-y-auto border border-neutral-200 dark:border-neutral-600 rounded p-2 space-y-1">
+                    <div class="max-h-32 overflow-y-auto border border-neutral-200 dark:border-neutral-600 rounded p-2 space-y-1 premium-scrollbar">
                       <For each={COUNTRIES}>
                         {(country) => (
                           <label class="flex items-center gap-2 cursor-pointer hover:bg-neutral-50 dark:hover:bg-neutral-700 p-1 rounded text-xs">
@@ -521,7 +521,7 @@ const UserListSidebar: Component<UserListSidebarProps> = (props) => {
 
       <div 
         ref={scrollContainer}
-        class="flex-1 overflow-y-auto py-1" 
+        class="flex-1 overflow-y-auto py-1 premium-scrollbar" 
         style="touch-action: pan-y; -webkit-overflow-scrolling: touch; overscroll-behavior-y: contain;"
         onScroll={handleScroll}
         onTouchStart={handleContainerTouchStart}

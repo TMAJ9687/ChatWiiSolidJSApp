@@ -26,7 +26,7 @@ const MessageList: Component<MessageListProps> = (props) => {
   });
 
   return (
-    <div ref={scrollContainer} class="flex-1 overflow-y-auto overflow-x-hidden p-4 max-w-full min-w-0">
+    <div ref={scrollContainer} class="flex-1 overflow-y-auto overflow-x-hidden p-4 max-w-full min-w-0 premium-scrollbar">
       {props.messages.length === 0 ? (
         <div class="flex items-center justify-center h-full text-text-400 dark:text-text-600">
           No messages yet. Start the conversation!
