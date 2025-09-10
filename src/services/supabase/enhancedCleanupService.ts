@@ -86,7 +86,7 @@ class EnhancedCleanupService {
       await supabase
         .from("reports")
         .delete()
-        .or(`reporter_id.eq.${userId},reported_user_id.eq.${userId}`);
+        .or(`reporter_id.eq.${userId},reported_id.eq.${userId}`);
     } catch (error) {
       // Reports table cleanup failed - continue
     }

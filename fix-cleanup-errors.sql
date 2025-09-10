@@ -1,11 +1,11 @@
 -- Fix cleanup errors by ensuring tables exist and have proper permissions
 -- Run this in your Supabase SQL editor
 
--- 1. Create reports table if it doesn't exist
+-- 1. Create reports table if it doesn't exist (using correct column names)
 CREATE TABLE IF NOT EXISTS public.reports (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   reporter_id UUID REFERENCES public.users(id) ON DELETE CASCADE,
-  reported_user_id UUID REFERENCES public.users(id) ON DELETE CASCADE,
+  reported_id UUID REFERENCES public.users(id) ON DELETE CASCADE,
   reason TEXT NOT NULL,
   custom_reason TEXT,
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
@@ -15,7 +15,7 @@ CREATE TABLE IF NOT EXISTS public.reports (
 
 -- Create indexes for reports
 CREATE INDEX IF NOT EXISTS idx_reports_reporter ON public.reports(reporter_id);
-CREATE INDEX IF NOT EXISTS idx_reports_reported ON public.reports(reported_user_id);
+CREATE INDEX IF NOT EXISTS idx_reports_reported ON public.reports(reported_id);
 CREATE INDEX IF NOT EXISTS idx_reports_created ON public.reports(created_at DESC);
 
 -- Enable RLS for reports

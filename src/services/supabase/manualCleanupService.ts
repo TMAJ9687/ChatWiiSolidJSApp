@@ -166,7 +166,7 @@ class ManualCleanupService {
             const { error: reportsError } = await supabase
               .from("reports")
               .delete()
-              .or(`reporter_id.eq.${user.id},reported_user_id.eq.${user.id}`);
+              .or(`reporter_id.eq.${user.id},reported_id.eq.${user.id}`);
 
             if (reportsError) {
               details.push(`Warning: Error deleting reports for ${user.nickname}: ${reportsError.message}`);
@@ -446,7 +446,7 @@ class ManualCleanupService {
           const cleanupTasks = [
             { name: 'messages', table: 'messages', condition: 'or', value: `sender_id.eq.${ghost.id},receiver_id.eq.${ghost.id}` },
             { name: 'blocks', table: 'blocks', condition: 'or', value: `blocker_id.eq.${ghost.id},blocked_id.eq.${ghost.id}` },
-            { name: 'reports', table: 'reports', condition: 'or', value: `reporter_id.eq.${ghost.id},reported_user_id.eq.${ghost.id}` }
+            { name: 'reports', table: 'reports', condition: 'or', value: `reporter_id.eq.${ghost.id},reported_id.eq.${ghost.id}` }
           ];
 
           for (const task of cleanupTasks) {
