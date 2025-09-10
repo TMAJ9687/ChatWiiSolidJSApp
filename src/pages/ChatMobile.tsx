@@ -80,9 +80,14 @@ const ChatMobile: Component = () => {
     // Set user offline when component unmounts
     const user = currentUser();
     if (user) {
-      presenceService.setUserOffline(user.id);
+      // Use enhanced cleanup for proper user handling
+      import('../services/supabase/enhancedCleanupService').then(({ enhancedCleanupService }) => {
+        enhancedCleanupService.handleLogout(user);
+      });
     }
     
+    // Clean up presence service
+    presenceService.cleanup();
     idleService.cleanup();
   });
 

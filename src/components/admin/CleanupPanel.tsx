@@ -13,6 +13,7 @@ export function CleanupPanel() {
   const [lastAction, setLastAction] = createSignal<CleanupResult | null>(null);
   const [isAutomaticActive, setIsAutomaticActive] = createSignal(false);
   const [message, setMessage] = createSignal<{ type: 'success' | 'error' | 'info', text: string } | null>(null);
+  const [enhancedCleanupResult, setEnhancedCleanupResult] = createSignal<string>('');
 
   // Load initial data
   onMount(() => {
@@ -102,6 +103,26 @@ export function CleanupPanel() {
   };
 
   const clearMessage = () => setMessage(null);
+
+  // Enhanced cleanup test functions
+  const testEnhancedCleanup = async () => {
+    try {
+      setIsLoading(true);
+      const { enhancedCleanupService } = await import('../../services/supabase/enhancedCleanupService');
+      const result = await enhancedCleanupService.cleanupStaleStandardUsers();
+      setEnhancedCleanupResult(`Enhanced cleanup completed: ${result} stale standard users removed`);
+      setMessage({ 
+        type: 'success', 
+        text: `Enhanced cleanup test completed: ${result} users processed` 
+      });
+      await loadData();
+    } catch (error) {
+      setEnhancedCleanupResult(`Enhanced cleanup failed: ${error.message || 'Unknown error'}`);
+      setMessage({ type: 'error', text: 'Enhanced cleanup test failed' });
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   return (
     <div class="bg-white rounded-lg shadow p-6">
@@ -260,6 +281,42 @@ export function CleanupPanel() {
         )}
       </div>
 
+      {/* Enhanced Cleanup Testing Section */}
+      <div class="mt-8 bg-purple-50 border border-purple-200 rounded-lg p-6">
+        <h3 class="text-lg font-medium mb-4 text-purple-900">Enhanced Cleanup System (Real-time)</h3>
+        <p class="text-sm text-purple-700 mb-4">
+          Test the new enhanced cleanup system that provides immediate cleanup for standard users when they disconnect,
+          while preserving VIP and Admin accounts.
+        </p>
+        
+        <div class="flex gap-4 mb-4">
+          <button
+            onClick={testEnhancedCleanup}
+            disabled={isLoading()}
+            class="px-4 py-2 bg-purple-600 text-white rounded hover:bg-purple-700 disabled:opacity-50"
+          >
+            Test Enhanced Cleanup
+          </button>
+        </div>
+
+        {enhancedCleanupResult() && (
+          <div class="mt-4 p-3 bg-purple-100 border border-purple-300 rounded">
+            <p class="text-sm text-purple-800">{enhancedCleanupResult()}</p>
+          </div>
+        )}
+
+        <div class="mt-4 text-xs text-purple-600">
+          <strong>Enhanced Cleanup Features:</strong>
+          <ul class="list-disc list-inside ml-4 mt-1">
+            <li>Immediate cleanup on browser close/refresh for standard users</li>
+            <li>Complete removal from auth and database tables</li>
+            <li>VIP and Admin accounts preserved - only marked offline</li>
+            <li>Automatic cleanup of stale connections every 2 minutes</li>
+            <li>Browser event handlers for reliable cleanup</li>
+          </ul>
+        </div>
+      </div>
+
       {/* Info Box */}
       <div class="mt-6 bg-blue-50 border-l-4 border-blue-400 p-4">
         <div class="flex">
@@ -271,7 +328,7 @@ export function CleanupPanel() {
           <div class="ml-3">
             <p class="text-sm text-blue-700">
               <strong>How it works:</strong> Anonymous users who haven't been active for more than 1 hour are automatically cleaned up to reduce database costs. 
-              This includes all their messages, reports, blocks, and presence data. Admin users are never affected.
+              This includes all their messages, reports, blocks, and presence data. Admin and VIP users are preserved.
             </p>
           </div>
         </div>

@@ -1,4 +1,4 @@
-import { Component } from "solid-js";
+import { Component, onMount, onCleanup } from "solid-js";
 import { Router, Route } from "@solidjs/router";
 import Landing from "./pages/Landing";
 import Chat from "./pages/Chat";
@@ -12,6 +12,25 @@ import Safety from "./pages/Safety";
 import HowItWorks from "./pages/HowItWorks";
 
 const App: Component = () => {
+  let cleanupInterval: NodeJS.Timeout | null = null;
+
+  onMount(async () => {
+    // Start automatic cleanup for stale standard users
+    try {
+      const { enhancedCleanupService } = await import('./services/supabase/enhancedCleanupService');
+      cleanupInterval = enhancedCleanupService.startAutomaticCleanup();
+      console.log('Automatic cleanup service started');
+    } catch (error) {
+      console.warn('Failed to start automatic cleanup:', error);
+    }
+  });
+
+  onCleanup(() => {
+    if (cleanupInterval) {
+      clearInterval(cleanupInterval);
+    }
+  });
+
   return (
     <Router>
       <Route path="/" component={Landing} />

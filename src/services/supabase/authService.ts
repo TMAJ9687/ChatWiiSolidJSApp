@@ -231,15 +231,28 @@ class AuthService {
   async signOut() {
     if (this.currentUser) {
       try {
-        // Remove from online users first
-        await presenceService.setUserOffline(this.currentUser.id);
-        
-        // Note: We don't need to update the users table directly on logout
-        // The presence service handles the online status, and the nickname cleanup
-        // can be handled by a background cleanup job instead of during logout
+        // Get current user profile to check role
+        const { data: userProfile } = await supabase
+          .from("users")
+          .select("role")
+          .eq("id", this.currentUser.id)
+          .single();
+
+        if (userProfile) {
+          // Use enhanced cleanup that handles VIP/Admin differently
+          const { enhancedCleanupService } = await import('./enhancedCleanupService');
+          await enhancedCleanupService.handleLogout({
+            id: this.currentUser.id,
+            role: userProfile.role
+          } as User);
+        } else {
+          // Fallback to basic offline setting
+          await presenceService.setUserOffline(this.currentUser.id);
+        }
       } catch (error) {
         console.warn("Error during logout cleanup:", error);
         // Continue with logout even if cleanup fails
+        await presenceService.setUserOffline(this.currentUser.id);
       }
     }
 

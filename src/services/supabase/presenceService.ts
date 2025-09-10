@@ -33,6 +33,10 @@ class PresenceService {
     // Set up browser event handlers for cleanup
     this.setupBrowserEventHandlers();
     
+    // Set up enhanced cleanup for this user
+    const { enhancedCleanupService } = await import('./enhancedCleanupService');
+    enhancedCleanupService.setupBrowserCleanupHandlers(user);
+    
     const presenceData: PresenceData = {
       user_id: user.id,
       online: true,
@@ -273,11 +277,15 @@ class PresenceService {
   }
 
   // Clean up all resources
-  cleanup(): void {
+  async cleanup(): Promise<void> {
     if (this.currentUserId) {
-      this.setUserOffline(this.currentUserId);
+      await this.setUserOffline(this.currentUserId);
     }
     this.removeBrowserEventHandlers();
+    
+    // Clean up enhanced cleanup handlers
+    const { enhancedCleanupService } = await import('./enhancedCleanupService');
+    enhancedCleanupService.removeBrowserCleanupHandlers();
   }
 
   // Set up browser event handlers for proper cleanup
