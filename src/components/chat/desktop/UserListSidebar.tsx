@@ -25,6 +25,10 @@ const UserListSidebar: Component<UserListSidebarProps> = (props) => {
   const [usersWhoBlockedMe, setUsersWhoBlockedMe] = createSignal<string[]>([]);
   const [searchQuery, setSearchQuery] = createSignal("");
   const [showFilterPopup, setShowFilterPopup] = createSignal(false);
+  const [isScrolling, setIsScrolling] = createSignal(false);
+  const [touchStartY, setTouchStartY] = createSignal(0);
+  const [hasMoved, setHasMoved] = createSignal(false);
+  const [selectedTouchTarget, setSelectedTouchTarget] = createSignal<HTMLElement | null>(null);
   const [filters, setFilters] = createSignal<FilterOptions>({
     genders: new Set(['male', 'female']),
     ageMin: 18,
@@ -33,6 +37,8 @@ const UserListSidebar: Component<UserListSidebarProps> = (props) => {
   });
 
   let filterRef: HTMLDivElement | undefined;
+  let scrollContainer: HTMLDivElement | undefined;
+  let scrollTimer: NodeJS.Timeout | null = null;
 
   // Load blocked users and set up real-time updates
   createEffect(async () => {
@@ -254,7 +260,65 @@ const UserListSidebar: Component<UserListSidebarProps> = (props) => {
 
   onCleanup(() => {
     document.removeEventListener('click', handleClickOutside);
+    if (scrollTimer) clearTimeout(scrollTimer);
   });
+
+  // Handle scroll events to detect when user is scrolling
+  const handleScroll = () => {
+    setIsScrolling(true);
+    
+    // Clear existing timer
+    if (scrollTimer) clearTimeout(scrollTimer);
+    
+    // Set timer to stop scrolling detection after scroll ends
+    scrollTimer = setTimeout(() => {
+      setIsScrolling(false);
+    }, 150); // Short delay to ensure scroll momentum is done
+  };
+
+  const handleContainerTouchStart = (e: TouchEvent) => {
+    const userItem = (e.target as HTMLElement).closest('[data-user-id]');
+    
+    if (userItem) {
+      setSelectedTouchTarget(userItem as HTMLElement);
+      setTouchStartY(e.touches[0].clientY);
+      setHasMoved(false);
+      setIsScrolling(false);
+    }
+    if (scrollTimer) clearTimeout(scrollTimer);
+  };
+
+  const handleContainerTouchMove = (e: TouchEvent) => {
+    const moveThreshold = 5;
+    const currentY = e.touches[0].clientY;
+    const deltaY = Math.abs(currentY - touchStartY());
+    
+    if (deltaY > moveThreshold) {
+      setHasMoved(true);
+      setIsScrolling(true);
+    }
+  };
+
+  const handleContainerTouchEnd = (e: TouchEvent) => {
+    const userItem = (e.target as HTMLElement).closest('[data-user-id]');
+    const selectedTarget = selectedTouchTarget();
+    
+    if (userItem && userItem === selectedTarget && !hasMoved()) {
+      const userId = userItem.getAttribute('data-user-id');
+      const user = filteredUsers().find(u => u.id === userId);
+      if (user && user.id !== props.currentUser?.id) {
+        props.onSelectUser(user);
+      }
+    }
+    
+    setSelectedTouchTarget(null);
+    
+    // Reset states after a delay
+    setTimeout(() => {
+      setHasMoved(false);
+      setIsScrolling(false);
+    }, 100);
+  };
 
   return (
     <aside class="w-80 bg-white dark:bg-neutral-800 border-r border-neutral-200 dark:border-neutral-700 flex flex-col">
@@ -412,7 +476,14 @@ const UserListSidebar: Component<UserListSidebarProps> = (props) => {
 
 
 
-      <div class="flex-1 overflow-y-auto py-1">
+      <div 
+        ref={scrollContainer}
+        class="flex-1 overflow-y-auto py-1"
+        onScroll={handleScroll}
+        onTouchStart={handleContainerTouchStart}
+        onTouchMove={handleContainerTouchMove}
+        onTouchEnd={handleContainerTouchEnd}
+      >
         <For each={filteredUsers()}>
           {(user) => (
             <UserListItem
@@ -422,6 +493,8 @@ const UserListSidebar: Component<UserListSidebarProps> = (props) => {
               isCurrentUser={props.currentUser?.id === user.id}
               isBlocked={blockedUsers().includes(user.id)}
               isBlockedBy={usersWhoBlockedMe().includes(user.id)}
+              isScrolling={isScrolling()}
+              hasMoved={hasMoved()}
             />
           )}
         </For>

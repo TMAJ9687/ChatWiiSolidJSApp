@@ -9,6 +9,8 @@ interface UserListItemProps {
   isCurrentUser: boolean;
   isBlocked?: boolean;
   isBlockedBy?: boolean;
+  isScrolling?: boolean;
+  hasMoved?: boolean;
 }
 
 const UserListItem: Component<UserListItemProps> = (props) => {
@@ -22,7 +24,14 @@ const UserListItem: Component<UserListItemProps> = (props) => {
     return gender === "male" ? "text-blue-500" : "text-pink-500";
   };
 
-  const handleClick = () => {
+  const handleClick = (e: MouseEvent) => {
+    // Prevent clicks during scroll or touch movement
+    if (props.isScrolling || props.hasMoved) {
+      e.preventDefault();
+      e.stopPropagation();
+      return;
+    }
+    
     if (!props.isCurrentUser) {
       props.onClick();
     }
@@ -31,9 +40,8 @@ const UserListItem: Component<UserListItemProps> = (props) => {
   return (
     <div class="px-1 py-0.5">
       <div
-        onMouseDown={handleClick}
+        data-user-id={props.user.id}
         onClick={handleClick}
-        onTouchStart={handleClick}
         class={`w-full p-3 flex items-center gap-3 rounded-xl border transition-all duration-200 relative
                 ${props.user.role === "admin" 
                   ? props.isSelected
