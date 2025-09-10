@@ -240,12 +240,11 @@ export class FeedbackService {
       .from('feedback')
       .insert({
         email: feedback.email,
-        message: feedback.feedback_text,
+        message: feedback.feedback_text,  // Use 'message' to match other service methods
         subject: feedback.subject || 'User Feedback',
         user_id: feedback.user_id,
-        status: 'pending',
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
+        status: 'pending'
+        // Let database defaults handle created_at/updated_at
       });
 
     if (error) {
