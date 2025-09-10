@@ -18,6 +18,7 @@ export function CleanupPanel() {
   const [manualCleanupLogs, setManualCleanupLogs] = createSignal<string[]>([]);
   const [userStats, setUserStats] = createSignal<any>(null);
   const [cleanupInProgress, setCleanupInProgress] = createSignal<boolean>(false);
+  const [ghostStats, setGhostStats] = createSignal<any>(null);
 
   // Load initial data
   onMount(() => {
@@ -219,6 +220,68 @@ export function CleanupPanel() {
     } catch (error) {
       setMessage({ type: 'error', text: `Failed to clear presence: ${error.message}` });
     } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Ghost user functions
+  const findGhostUsers = async () => {
+    try {
+      setIsLoading(true);
+      const result = await manualCleanupService.findGhostUsers();
+      setGhostStats(result);
+      setManualCleanupLogs(result.details);
+      setMessage({ 
+        type: 'info', 
+        text: `Found ${result.ghostCount} ghost users - check logs below` 
+      });
+    } catch (error) {
+      setMessage({ type: 'error', text: `Failed to find ghost users: ${error.message}` });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const fixGhostUsers = async () => {
+    if (!confirm('Fix ghost users by setting them offline? This will correct the online status mismatches.')) {
+      return;
+    }
+
+    try {
+      setIsLoading(true);
+      const result = await manualCleanupService.fixGhostUsers();
+      setMessage({ 
+        type: result.success ? 'success' : 'error', 
+        text: result.message 
+      });
+      setManualCleanupLogs(result.details);
+      await loadUserStats();
+    } catch (error) {
+      setMessage({ type: 'error', text: `Failed to fix ghost users: ${error.message}` });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const cleanupGhostUsers = async () => {
+    if (!confirm('Delete ghost users completely? This will permanently delete standard ghost users and all their data!')) {
+      return;
+    }
+
+    try {
+      setCleanupInProgress(true);
+      setIsLoading(true);
+      const result = await manualCleanupService.cleanupGhostUsers();
+      setMessage({ 
+        type: result.success ? 'success' : 'error', 
+        text: result.message 
+      });
+      setManualCleanupLogs(result.details);
+      await loadUserStats();
+    } catch (error) {
+      setMessage({ type: 'error', text: `Failed to cleanup ghost users: ${error.message}` });
+    } finally {
+      setCleanupInProgress(false);
       setIsLoading(false);
     }
   };
@@ -488,6 +551,82 @@ export function CleanupPanel() {
             </div>
           </div>
         )}
+      </div>
+
+      {/* Ghost User Detection and Cleanup */}
+      <div class="mt-8 bg-orange-50 border border-orange-200 rounded-lg p-6">
+        <h3 class="text-lg font-medium mb-4 text-orange-900">👻 Ghost User Detection & Cleanup</h3>
+        <p class="text-sm text-orange-700 mb-4">
+          <strong>Ghost users</strong> are users marked as "online" in the database but have no presence records. 
+          This usually happens when users disconnect unexpectedly without proper cleanup.
+        </p>
+
+        {/* Ghost Statistics */}
+        {ghostStats() && (
+          <div class="mb-6 bg-orange-100 border border-orange-300 rounded p-4">
+            <h4 class="text-sm font-medium text-orange-900 mb-2">👻 Ghost Analysis Results:</h4>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+              <div class="text-center">
+                <p class="text-2xl font-bold text-orange-800">{ghostStats().ghostCount}</p>
+                <p class="text-xs text-orange-600">Total Ghosts</p>
+              </div>
+              <div class="text-center">
+                <p class="text-lg font-semibold text-orange-800">
+                  {ghostStats().ghostUsers?.filter(u => u.role === 'standard').length || 0}
+                </p>
+                <p class="text-xs text-orange-600">Standard Ghosts</p>
+              </div>
+              <div class="text-center">
+                <p class="text-lg font-semibold text-orange-800">
+                  {ghostStats().ghostUsers?.filter(u => u.role === 'vip' || u.role === 'admin').length || 0}
+                </p>
+                <p class="text-xs text-orange-600">VIP/Admin Ghosts</p>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Ghost Actions */}
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+          <div class="space-y-2">
+            <button
+              onClick={findGhostUsers}
+              disabled={isLoading()}
+              class="w-full px-4 py-2 bg-orange-600 text-white rounded hover:bg-orange-700 disabled:opacity-50"
+            >
+              👻 Find Ghost Users
+            </button>
+            <p class="text-xs text-gray-600">Analyze users marked online but with no presence</p>
+          </div>
+
+          <div class="space-y-2">
+            <button
+              onClick={fixGhostUsers}
+              disabled={isLoading()}
+              class="w-full px-4 py-2 bg-yellow-600 text-white rounded hover:bg-yellow-700 disabled:opacity-50"
+            >
+              🔧 Fix Ghost Users (Set Offline)
+            </button>
+            <p class="text-xs text-gray-600">Correct online status mismatches without deleting</p>
+          </div>
+
+          <div class="space-y-2">
+            <button
+              onClick={cleanupGhostUsers}
+              disabled={isLoading() || cleanupInProgress()}
+              class="w-full px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 disabled:opacity-50"
+            >
+              {cleanupInProgress() ? '🔄 Cleaning...' : '🗑️ Delete Ghost Users'}
+            </button>
+            <p class="text-xs text-gray-600">Permanently delete standard ghost users</p>
+          </div>
+        </div>
+
+        <div class="text-xs text-orange-600 bg-orange-100 border border-orange-300 rounded p-3">
+          <strong>How it works:</strong> Ghost users are users stuck as "online" in the database without actual presence. 
+          This happens when browsers close unexpectedly or network disconnects prevent proper cleanup. 
+          The system finds users marked online but missing from the presence table.
+        </div>
       </div>
 
       {/* Enhanced Cleanup Testing Section */}

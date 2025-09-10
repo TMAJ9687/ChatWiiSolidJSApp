@@ -16,6 +16,9 @@ declare global {
       cleanupOfflineUsers: () => Promise<void>;
       forceOffline: () => Promise<void>;
       clearPresence: () => Promise<void>;
+      findGhosts: () => Promise<void>;
+      fixGhosts: () => Promise<void>;
+      cleanupGhosts: () => Promise<void>;
     };
   }
 }
@@ -105,6 +108,49 @@ const debugCleanup = {
     const result = await manualCleanupService.clearAllPresence();
     console.log(`✅ Result: ${result.message}`);
     console.log(`📊 Deleted: ${result.deletedCount} records`);
+  },
+
+  /**
+   * Find ghost users (marked online but no presence)
+   */
+  async findGhosts() {
+    console.log("👻 Finding ghost users...");
+    const result = await manualCleanupService.findGhostUsers();
+    console.log(`📊 Found ${result.ghostCount} ghost users`);
+    result.details.forEach(detail => console.log(detail));
+    
+    if (result.ghostUsers.length > 0) {
+      console.log("👻 Ghost users details:");
+      console.table(result.ghostUsers.map(u => ({
+        id: u.id.substring(0, 8) + "...",
+        nickname: u.nickname,
+        role: u.role,
+        online: u.online,
+        created: new Date(u.created_at).toLocaleTimeString()
+      })));
+    }
+  },
+
+  /**
+   * Fix ghost users (set them offline)
+   */
+  async fixGhosts() {
+    console.log("🔧 Fixing ghost users...");
+    const result = await manualCleanupService.fixGhostUsers();
+    console.log(`✅ Result: ${result.message}`);
+    console.log(`📊 Fixed: ${result.fixedCount} users`);
+    result.details.forEach(detail => console.log(detail));
+  },
+
+  /**
+   * Clean up ghost users completely (delete standard ghosts)
+   */
+  async cleanupGhosts() {
+    console.log("🗑️ Cleaning up ghost users...");
+    const result = await manualCleanupService.cleanupGhostUsers();
+    console.log(`✅ Result: ${result.message}`);
+    console.log(`📊 Deleted: ${result.deletedCount} users`);
+    result.details.forEach(detail => console.log(detail));
   }
 };
 
@@ -118,6 +164,10 @@ if (typeof window !== 'undefined') {
   console.log("- window.debugCleanup.cleanupOfflineUsers() - Clean offline users");
   console.log("- window.debugCleanup.forceOffline() - Force users offline");
   console.log("- window.debugCleanup.clearPresence() - Clear all presence");
+  console.log("👻 GHOST USER COMMANDS:");
+  console.log("- window.debugCleanup.findGhosts() - Find ghost users (marked online but no presence)");
+  console.log("- window.debugCleanup.fixGhosts() - Fix ghost users (set offline)");
+  console.log("- window.debugCleanup.cleanupGhosts() - Delete ghost users completely");
 }
 
 export default debugCleanup;

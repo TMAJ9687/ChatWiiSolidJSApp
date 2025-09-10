@@ -253,6 +253,240 @@ class ManualCleanupService {
   }
 
   /**
+   * Find ghost users - users marked online but with no presence records
+   */
+  async findGhostUsers(): Promise<{
+    ghostUsers: any[];
+    ghostCount: number;
+    details: string[];
+  }> {
+    const details: string[] = [];
+    
+    try {
+      details.push("🔍 Analyzing ghost users (marked online but no presence)...");
+
+      // Get all online users
+      const { data: onlineUsers, error: usersError } = await supabase
+        .from("users")
+        .select("*")
+        .eq("online", true);
+
+      if (usersError) throw usersError;
+
+      // Get all presence records  
+      const { data: presenceRecords, error: presenceError } = await supabase
+        .from("presence")
+        .select("user_id");
+
+      if (presenceError) throw presenceError;
+
+      const presenceUserIds = new Set(presenceRecords?.map(p => p.user_id) || []);
+      
+      // Find users marked online but not in presence
+      const ghostUsers = (onlineUsers || []).filter(user => !presenceUserIds.has(user.id));
+
+      details.push(`📊 Found ${onlineUsers?.length || 0} users marked online`);
+      details.push(`📊 Found ${presenceRecords?.length || 0} presence records`);
+      details.push(`👻 Found ${ghostUsers.length} ghost users`);
+
+      if (ghostUsers.length > 0) {
+        details.push("👻 Ghost users breakdown:");
+        const standardGhosts = ghostUsers.filter(u => u.role === 'standard').length;
+        const vipGhosts = ghostUsers.filter(u => u.role === 'vip').length;
+        const adminGhosts = ghostUsers.filter(u => u.role === 'admin').length;
+        
+        details.push(`  - Standard: ${standardGhosts}`);
+        details.push(`  - VIP: ${vipGhosts}`);
+        details.push(`  - Admin: ${adminGhosts}`);
+      }
+
+      return {
+        ghostUsers,
+        ghostCount: ghostUsers.length,
+        details
+      };
+
+    } catch (error) {
+      details.push(`❌ Error finding ghost users: ${error.message || 'Unknown error'}`);
+      return {
+        ghostUsers: [],
+        ghostCount: 0,
+        details
+      };
+    }
+  }
+
+  /**
+   * Fix ghost users - set offline users without presence records to offline
+   */
+  async fixGhostUsers(): Promise<{
+    success: boolean;
+    message: string;
+    fixedCount: number;
+    details: string[];
+  }> {
+    const details: string[] = [];
+    let fixedCount = 0;
+
+    try {
+      details.push("🔧 Starting ghost user fix...");
+
+      // Find ghost users first
+      const ghostAnalysis = await this.findGhostUsers();
+      details.push(...ghostAnalysis.details);
+
+      if (ghostAnalysis.ghostCount === 0) {
+        return {
+          success: true,
+          message: "No ghost users found - database is clean",
+          fixedCount: 0,
+          details
+        };
+      }
+
+      // Fix standard ghost users (set offline)
+      const standardGhosts = ghostAnalysis.ghostUsers.filter(u => u.role === 'standard');
+      if (standardGhosts.length > 0) {
+        details.push(`🔧 Setting ${standardGhosts.length} standard ghost users offline...`);
+        
+        const { error: standardError } = await supabase
+          .from("users")
+          .update({ 
+            online: false,
+            last_seen: new Date().toISOString()
+          })
+          .in("id", standardGhosts.map(u => u.id));
+
+        if (standardError) {
+          details.push(`❌ Error fixing standard ghosts: ${standardError.message}`);
+        } else {
+          details.push(`✅ Fixed ${standardGhosts.length} standard ghost users`);
+          fixedCount += standardGhosts.length;
+        }
+      }
+
+      // Fix VIP/Admin ghost users (set offline but preserve)
+      const premiumGhosts = ghostAnalysis.ghostUsers.filter(u => u.role === 'vip' || u.role === 'admin');
+      if (premiumGhosts.length > 0) {
+        details.push(`🔧 Setting ${premiumGhosts.length} VIP/Admin ghost users offline...`);
+        
+        const { error: premiumError } = await supabase
+          .from("users")
+          .update({ 
+            online: false,
+            last_seen: new Date().toISOString()
+          })
+          .in("id", premiumGhosts.map(u => u.id));
+
+        if (premiumError) {
+          details.push(`❌ Error fixing premium ghosts: ${premiumError.message}`);
+        } else {
+          details.push(`✅ Fixed ${premiumGhosts.length} VIP/Admin ghost users (preserved accounts)`);
+          fixedCount += premiumGhosts.length;
+        }
+      }
+
+      return {
+        success: true,
+        message: `Fixed ${fixedCount} ghost users`,
+        fixedCount,
+        details
+      };
+
+    } catch (error) {
+      details.push(`❌ Fatal error fixing ghost users: ${error.message || 'Unknown error'}`);
+      return {
+        success: false,
+        message: `Ghost fix failed: ${error.message || 'Unknown error'}`,
+        fixedCount,
+        details
+      };
+    }
+  }
+
+  /**
+   * Clean up ghost users completely (delete offline standard users without presence)
+   */
+  async cleanupGhostUsers(): Promise<{
+    success: boolean;
+    message: string;
+    deletedCount: number;
+    details: string[];
+  }> {
+    const details: string[] = [];
+    let deletedCount = 0;
+
+    try {
+      details.push("🗑️ Starting ghost user cleanup...");
+
+      // Find ghost users
+      const ghostAnalysis = await this.findGhostUsers();
+      details.push(...ghostAnalysis.details);
+
+      // Only delete standard ghost users that are offline
+      const standardGhosts = ghostAnalysis.ghostUsers.filter(u => u.role === 'standard');
+      
+      if (standardGhosts.length === 0) {
+        return {
+          success: true,
+          message: "No standard ghost users found to cleanup",
+          deletedCount: 0,
+          details
+        };
+      }
+
+      details.push(`🗑️ Deleting ${standardGhosts.length} standard ghost users...`);
+
+      // Delete each ghost user completely
+      for (const ghost of standardGhosts) {
+        try {
+          details.push(`🗑️ Deleting ghost user: ${ghost.nickname} (${ghost.id.substring(0, 8)}...)`);
+
+          // Delete user's data
+          await Promise.all([
+            supabase.from("messages").delete().eq("sender_id", ghost.id),
+            supabase.from("conversations").delete().or(`user1_id.eq.${ghost.id},user2_id.eq.${ghost.id}`),
+            supabase.from("blocks").delete().or(`blocker_id.eq.${ghost.id},blocked_id.eq.${ghost.id}`),
+            supabase.from("reports").delete().or(`reporter_id.eq.${ghost.id},reported_user_id.eq.${ghost.id}`)
+          ]);
+
+          // Delete the user
+          const { error: userError } = await supabase
+            .from("users")
+            .delete()
+            .eq("id", ghost.id);
+
+          if (userError) {
+            details.push(`❌ Error deleting ghost ${ghost.nickname}: ${userError.message}`);
+          } else {
+            details.push(`✅ Deleted ghost user ${ghost.nickname}`);
+            deletedCount++;
+          }
+
+        } catch (userError) {
+          details.push(`❌ Error processing ghost ${ghost.nickname}: ${userError.message || 'Unknown error'}`);
+        }
+      }
+
+      return {
+        success: true,
+        message: `Ghost cleanup completed: ${deletedCount}/${standardGhosts.length} ghost users deleted`,
+        deletedCount,
+        details
+      };
+
+    } catch (error) {
+      details.push(`❌ Fatal error during ghost cleanup: ${error.message || 'Unknown error'}`);
+      return {
+        success: false,
+        message: `Ghost cleanup failed: ${error.message || 'Unknown error'}`,
+        deletedCount,
+        details
+      };
+    }
+  }
+
+  /**
    * Clear all presence records (nuclear option)
    */
   async clearAllPresence(): Promise<{
