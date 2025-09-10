@@ -58,6 +58,23 @@ const Chat: Component = () => {
     checkMobile();
     window.addEventListener('resize', checkMobile);
 
+    // Dynamic height adjustment for mobile browsers
+    const setVH = () => {
+      const vh = window.innerHeight * 0.01;
+      document.documentElement.style.setProperty('--vh', `${vh}px`);
+    };
+    
+    setVH();
+    
+    // Listen for resize events
+    window.addEventListener('resize', setVH);
+    window.addEventListener('orientationchange', setVH);
+    
+    // Use visualViewport API if available
+    if (window.visualViewport) {
+      window.visualViewport.addEventListener('resize', setVH);
+    }
+
     // Add browser back button warning
     const handleBeforeUnload = (e: BeforeUnloadEvent) => {
       e.preventDefault();
@@ -112,6 +129,22 @@ const Chat: Component = () => {
     
     // Clean up resize listener
     window.removeEventListener('resize', checkMobile);
+    
+    // Clean up viewport height listeners
+    window.removeEventListener('resize', () => {
+      const vh = window.innerHeight * 0.01;
+      document.documentElement.style.setProperty('--vh', `${vh}px`);
+    });
+    window.removeEventListener('orientationchange', () => {
+      const vh = window.innerHeight * 0.01;
+      document.documentElement.style.setProperty('--vh', `${vh}px`);
+    });
+    if (window.visualViewport) {
+      window.visualViewport.removeEventListener('resize', () => {
+        const vh = window.innerHeight * 0.01;
+        document.documentElement.style.setProperty('--vh', `${vh}px`);
+      });
+    }
     
     // Clean up beforeunload listener
     window.removeEventListener('beforeunload', (e) => {
@@ -214,7 +247,7 @@ const Chat: Component = () => {
         description="Anonymous chat with people worldwide. Safe, private conversations."
       />
       
-      <div class="h-screen flex flex-col bg-neutral-50 dark:bg-neutral-900 relative">
+      <div class="mobile-viewport flex flex-col bg-neutral-50 dark:bg-neutral-900 relative">
         <Show when={isMobile()}>
           <ChatHeader 
             user={currentUser()} 

@@ -658,7 +658,7 @@ const ChatArea: Component<ChatAreaProps> = (props) => {
   };
 
   return (
-    <div class="flex-1 flex flex-col bg-neutral-50 dark:bg-neutral-900 max-w-full min-w-0 h-full">
+    <div class="flex-1 flex flex-col bg-neutral-50 dark:bg-neutral-900 max-w-full min-w-0 mobile-viewport">
       <Show
         when={props.selectedUser}
         fallback={
@@ -753,13 +753,15 @@ const ChatArea: Component<ChatAreaProps> = (props) => {
         </Show>
 
         {/* Messages Area */}
-        <MessageList
-          messages={messages()}
-          currentUserId={props.currentUser?.id || ""}
-          userNickname={props.currentUser?.nickname}
-          currentUserRole={props.currentUser?.role}
-          onReplyClick={handleReplyClick}
-        />
+        <div class="mobile-messages-container">
+          <MessageList
+            messages={messages()}
+            currentUserId={props.currentUser?.id || ""}
+            userNickname={props.currentUser?.nickname}
+            currentUserRole={props.currentUser?.role}
+            onReplyClick={handleReplyClick}
+          />
+        </div>
 
         {/* Typing Indicator - VIP/Admin exclusive visibility */}
         <Show when={canSeeTypingIndicator()}>
