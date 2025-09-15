@@ -1,5 +1,6 @@
-import { Component } from "solid-js";
+import { Component, onMount } from "solid-js";
 import { Title, Meta, Link } from "@solidjs/meta";
+import { tabNotification } from "../../utils/tabNotification";
 
 interface SEOProps {
   title: string;
@@ -31,6 +32,13 @@ const SEOHead: Component<SEOProps> = (props) => {
   const currentUrl = props.url || (typeof window !== 'undefined' ? window.location.href : '');
   const imageUrl = props.image || '/images/chatwii-og-default.jpg';
   const fullTitle = props.title;
+
+  // Update tabNotification service with the correct title when component mounts
+  onMount(() => {
+    // Set the original title for the tab notification service
+    console.log('SEOHead mounted with title:', fullTitle);
+    tabNotification.setOriginalTitle(fullTitle);
+  });
 
   return (
     <>
