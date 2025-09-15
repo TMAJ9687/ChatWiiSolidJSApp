@@ -13,7 +13,7 @@ const About: Component = () => {
   return (
     <>
       <SEOHead 
-        title="About | ChatWii"
+        title="ChatWii - About"
         description="Learn about ChatWii's mission to provide safe, anonymous chat experiences. Privacy-first platform connecting people globally without compromising your identity or data."
         keywords={[
           "about chatwii",

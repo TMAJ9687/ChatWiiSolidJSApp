@@ -225,7 +225,7 @@ const Landing: Component = () => {
   return (
     <>
       <SEOHead 
-        title="ChatWii"
+        title="ChatWii - Anonymous Chat Platform"
         description="Connect with people worldwide through anonymous chat. No registration required. Private, safe, and secure conversations with complete anonymity. Join thousands chatting now!"
         keywords={[
           "anonymous chat online",

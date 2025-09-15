@@ -13,7 +13,7 @@ const HowItWorks: Component = () => {
   return (
     <>
       <SEOHead 
-        title="ChatWii"
+        title="ChatWii - How It Works"
         description="Learn how to use ChatWii anonymous chat platform. Step-by-step guide: create nickname, join chat rooms, message safely. No registration required!"
         keywords={[
           "how to use chatwii",

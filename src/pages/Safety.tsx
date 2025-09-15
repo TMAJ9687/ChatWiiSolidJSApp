@@ -13,7 +13,7 @@ const Safety: Component = () => {
   return (
     <>
       <SEOHead 
-        title="Safety | ChatWii"
+        title="ChatWii - Safety Guide"
         description="Complete safety guide for anonymous chat. Learn how to chat safely, report users, block inappropriate content, and protect your privacy online."
         keywords={[
           "anonymous chat safety",

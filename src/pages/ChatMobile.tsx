@@ -147,7 +147,7 @@ const ChatMobile: Component = () => {
   return (
     <>
       <SEOHead 
-        title="ChatWii"
+        title="ChatWii - Chat"
         description="Anonymous chat with people worldwide. Safe, private conversations."
       />
       

@@ -73,7 +73,7 @@ const Admin: Component = () => {
   return (
     <>
       <SEOHead 
-        title="Admin | ChatWii"
+        title="ChatWii - Admin Dashboard"
         description="ChatWii admin dashboard for managing users and site settings."
       />
       

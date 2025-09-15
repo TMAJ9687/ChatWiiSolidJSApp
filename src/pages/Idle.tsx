@@ -56,7 +56,7 @@ const Idle: Component = () => {
   return (
     <>
       <SEOHead 
-        title="ChatWii"
+        title="ChatWii - Session Paused"
         description="Session paused due to inactivity."
       />
       

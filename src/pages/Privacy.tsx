@@ -13,7 +13,7 @@ const Privacy: Component = () => {
   return (
     <>
       <SEOHead 
-        title="Privacy | ChatWii"
+        title="ChatWii - Privacy Policy"
         description="ChatWii privacy policy: Complete anonymity, no data collection, automatic message deletion. Learn how we protect your privacy in anonymous chat."
         keywords={[
           "chatwii privacy policy",

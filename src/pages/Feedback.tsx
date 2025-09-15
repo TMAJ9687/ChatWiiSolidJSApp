@@ -42,7 +42,7 @@ const Feedback: Component = () => {
   return (
     <>
       <SEOHead 
-        title="ChatWii"
+        title="ChatWii - Feedback"
         description="Share your feedback and help us improve ChatWii."
       />
       

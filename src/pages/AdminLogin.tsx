@@ -74,7 +74,7 @@ const AdminLogin: Component = () => {
   return (
     <>
       <SEOHead 
-        title="Admin | ChatWii"
+        title="ChatWii - Admin Login"
         description="Secure admin login for ChatWii management dashboard."
       />
       
