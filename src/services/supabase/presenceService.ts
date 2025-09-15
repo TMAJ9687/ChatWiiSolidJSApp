@@ -306,34 +306,62 @@ class PresenceService {
     // Handle tab close, refresh, navigation away
     this.browserHandlers.handleBeforeUnload = () => {
       if (this.currentUserId) {
-        // Use sendBeacon with Supabase RPC for reliable cleanup on page unload
-        if (navigator.sendBeacon) {
-          const cleanupPayload = JSON.stringify({
-            user_id: this.currentUserId,
-            timestamp: new Date().toISOString()
-          });
-
-          // Use Supabase endpoint for sendBeacon
+        // Try immediate synchronous cleanup first (most reliable)
+        try {
+          // Use synchronous XMLHttpRequest for better reliability during unload
+          const xhr = new XMLHttpRequest();
           const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
           const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
-          // Try sendBeacon to Supabase RPC with proper headers
+          // Immediate presence deletion (most critical)
+          xhr.open('DELETE', `${supabaseUrl}/rest/v1/presence?user_id=eq.${this.currentUserId}`, false);
+          xhr.setRequestHeader('apikey', anonKey);
+          xhr.setRequestHeader('Authorization', `Bearer ${anonKey}`);
+          xhr.send();
+        } catch (error) {
+          console.warn('Sync cleanup failed:', error);
+        }
+
+        // Backup: Use sendBeacon for emergency cleanup
+        if (navigator.sendBeacon) {
+          const cleanupPayload = JSON.stringify({
+            user_id: this.currentUserId,
+            cleanup_timestamp: new Date().toISOString()
+          });
+
+          const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+          const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+
+          // Try sendBeacon to emergency function
           navigator.sendBeacon(
-            `${supabaseUrl}/rest/v1/rpc/emergency_user_offline`,
+            `${supabaseUrl}/rest/v1/rpc/emergency_user_offline?apikey=${anonKey}`,
             new Blob([cleanupPayload], {
               type: 'application/json'
             })
           );
         }
 
-        // Also try immediate cleanup (might not complete)
+        // Also try async cleanup (might not complete but worth trying)
         this.setUserOffline(this.currentUserId);
       }
     };
 
     this.browserHandlers.handleUnload = () => {
       if (this.currentUserId) {
-        this.setUserOffline(this.currentUserId);
+        // Final attempt at cleanup with synchronous request
+        try {
+          const xhr = new XMLHttpRequest();
+          const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+          const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+
+          // Quick synchronous presence deletion
+          xhr.open('DELETE', `${supabaseUrl}/rest/v1/presence?user_id=eq.${this.currentUserId}`, false);
+          xhr.setRequestHeader('apikey', anonKey);
+          xhr.setRequestHeader('Authorization', `Bearer ${anonKey}`);
+          xhr.send();
+        } catch (error) {
+          // Silently fail - this is a last-ditch effort
+        }
       }
     };
 
