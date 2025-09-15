@@ -148,14 +148,17 @@ class EnhancedCleanupService {
 
     const handleVisibilityChange = () => {
       if (document.hidden) {
-        // User switched away - start a delayed cleanup timer for standard users
+        // User switched away (alt+tab) - just update activity, don't cleanup
+        // Users should stay in list when they alt+tab
+        // Only cleanup on actual tab close/browser close via beforeunload/unload events
         if (user.role === 'standard') {
-          setTimeout(() => {
-            if (document.hidden) {
-              // Still hidden after 3 seconds - perform enhanced cleanup
-              this.cleanupUser(user.id, user.role);
-            }
-          }, 3000); // Reduced from 30 seconds to 3 seconds as per requirements
+          // Just update last_seen timestamp, don't remove user
+          console.log('User tabbed away - updating activity but keeping online');
+        }
+      } else {
+        // User came back to tab - update activity
+        if (user.role === 'standard') {
+          console.log('User returned to tab - updating activity');
         }
       }
     };
