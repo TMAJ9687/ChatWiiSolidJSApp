@@ -24,6 +24,12 @@ class PresenceService {
   private activityUpdateThrottle: number = 30000; // 30 seconds throttle
   private currentUserId: string | null = null;
   private browserEventsSetup: boolean = false;
+  // Store actual handler references for proper cleanup
+  private browserHandlers: {
+    handleBeforeUnload?: (e: BeforeUnloadEvent) => any;
+    handleUnload?: () => void;
+    handleVisibilityChange?: () => void;
+  } = {};
 
   // Set user online
   async setUserOnline(user: User): Promise<void> {
@@ -119,7 +125,13 @@ class PresenceService {
   // Set user offline and cleanup
   async setUserOffline(userId: string): Promise<void> {
     try {
-      // Update presence in database
+      // First, remove from presence table (most important for user list)
+      await supabase
+        .from("presence")
+        .delete()
+        .eq("user_id", userId);
+
+      // Update any remaining presence records to offline
       await supabase
         .from("presence")
         .update({
@@ -128,27 +140,26 @@ class PresenceService {
         })
         .eq("user_id", userId);
 
-      // Unsubscribe from presence channel
-      if (this.presenceChannel) {
-        await this.presenceChannel.unsubscribe();
-        this.presenceChannel = null;
-      }
-
-      // Clean up heartbeat
+      // Clean up heartbeat and intervals first
       if (this.heartbeatInterval) {
         clearInterval(this.heartbeatInterval);
         this.heartbeatInterval = null;
+      }
+
+      if (this.cleanupTimeoutInterval) {
+        clearInterval(this.cleanupTimeoutInterval);
+        this.cleanupTimeoutInterval = null;
       }
 
       // Clean up all listeners
       this.listeners.forEach((cleanup) => cleanup());
       this.listeners = [];
 
-      // Remove from presence table
-      await supabase
-        .from("presence")
-        .delete()
-        .eq("user_id", userId);
+      // Finally, unsubscribe from presence channel
+      if (this.presenceChannel) {
+        await this.presenceChannel.unsubscribe();
+        this.presenceChannel = null;
+      }
     } catch (error) {
       console.error("Error setting user offline:", error);
     }
@@ -291,36 +302,52 @@ class PresenceService {
   // Set up browser event handlers for proper cleanup
   private setupBrowserEventHandlers(): void {
     if (this.browserEventsSetup) return;
-    
+
     // Handle tab close, refresh, navigation away
-    const handleBeforeUnload = () => {
+    this.browserHandlers.handleBeforeUnload = () => {
       if (this.currentUserId) {
-        // Use sendBeacon for reliable cleanup on page unload
-        const data = JSON.stringify({ user_id: this.currentUserId });
-        navigator.sendBeacon('/api/presence/offline', data);
-        
+        // Use sendBeacon with Supabase RPC for reliable cleanup on page unload
+        if (navigator.sendBeacon) {
+          const cleanupPayload = JSON.stringify({
+            user_id: this.currentUserId,
+            timestamp: new Date().toISOString()
+          });
+
+          // Use Supabase endpoint for sendBeacon
+          const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+          const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+
+          // Try sendBeacon to Supabase RPC with proper headers
+          navigator.sendBeacon(
+            `${supabaseUrl}/rest/v1/rpc/emergency_user_offline`,
+            new Blob([cleanupPayload], {
+              type: 'application/json'
+            })
+          );
+        }
+
         // Also try immediate cleanup (might not complete)
         this.setUserOffline(this.currentUserId);
       }
     };
 
-    const handleUnload = () => {
+    this.browserHandlers.handleUnload = () => {
       if (this.currentUserId) {
         this.setUserOffline(this.currentUserId);
       }
     };
 
-    const handleVisibilityChange = () => {
+    this.browserHandlers.handleVisibilityChange = () => {
       if (document.hidden && this.currentUserId) {
         // User switched to another tab/app - update activity but don't set offline
         this.updateActivity(this.currentUserId);
       }
     };
 
-    window.addEventListener('beforeunload', handleBeforeUnload);
-    window.addEventListener('unload', handleUnload);
-    window.addEventListener('pagehide', handleUnload);
-    document.addEventListener('visibilitychange', handleVisibilityChange);
+    window.addEventListener('beforeunload', this.browserHandlers.handleBeforeUnload);
+    window.addEventListener('unload', this.browserHandlers.handleUnload);
+    window.addEventListener('pagehide', this.browserHandlers.handleUnload);
+    document.addEventListener('visibilitychange', this.browserHandlers.handleVisibilityChange);
 
     this.browserEventsSetup = true;
   }
@@ -329,15 +356,20 @@ class PresenceService {
   private removeBrowserEventHandlers(): void {
     if (!this.browserEventsSetup) return;
 
-    const handleBeforeUnload = () => {};
-    const handleUnload = () => {};
-    const handleVisibilityChange = () => {};
+    // Remove actual handler references
+    if (this.browserHandlers.handleBeforeUnload) {
+      window.removeEventListener('beforeunload', this.browserHandlers.handleBeforeUnload);
+    }
+    if (this.browserHandlers.handleUnload) {
+      window.removeEventListener('unload', this.browserHandlers.handleUnload);
+      window.removeEventListener('pagehide', this.browserHandlers.handleUnload);
+    }
+    if (this.browserHandlers.handleVisibilityChange) {
+      document.removeEventListener('visibilitychange', this.browserHandlers.handleVisibilityChange);
+    }
 
-    window.removeEventListener('beforeunload', handleBeforeUnload);
-    window.removeEventListener('unload', handleUnload);
-    window.removeEventListener('pagehide', handleUnload);
-    document.removeEventListener('visibilitychange', handleVisibilityChange);
-
+    // Clear handler references
+    this.browserHandlers = {};
     this.browserEventsSetup = false;
   }
 

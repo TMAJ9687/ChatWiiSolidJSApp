@@ -116,8 +116,10 @@ class EnhancedCleanupService {
    * Set up enhanced browser event handlers for immediate cleanup
    */
   setupBrowserCleanupHandlers(user: User): void {
+    // Don't remove existing handlers - let presenceService manage basic presence
+    // We'll add additional cleanup logic on top of existing handlers
     if (this.browserEventsSetup) {
-      this.removeBrowserCleanupHandlers();
+      return; // Already set up, don't interfere with presenceService handlers
     }
 
     const handleImmediateCleanup = (event?: Event) => {
@@ -139,18 +141,9 @@ class EnhancedCleanupService {
       this.cleanupUser(user.id, user.role);
     };
 
-    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+    const handleEnhancedCleanup = (e?: Event) => {
+      // Only add enhanced cleanup on top of basic presence cleanup
       handleImmediateCleanup(e);
-      // For standard users, show warning. For VIP/Admin, less intrusive
-      if (user.role === 'standard') {
-        e.preventDefault();
-        e.returnValue = 'Are you sure you want to leave? Your account will be removed.';
-        return 'Are you sure you want to leave? Your account will be removed.';
-      }
-    };
-
-    const handleUnload = () => {
-      handleImmediateCleanup();
     };
 
     const handleVisibilityChange = () => {
@@ -159,10 +152,10 @@ class EnhancedCleanupService {
         if (user.role === 'standard') {
           setTimeout(() => {
             if (document.hidden) {
-              // Still hidden after 30 seconds - cleanup
+              // Still hidden after 3 seconds - perform enhanced cleanup
               this.cleanupUser(user.id, user.role);
             }
-          }, 30000);
+          }, 3000); // Reduced from 30 seconds to 3 seconds as per requirements
         }
       }
     };
@@ -174,17 +167,12 @@ class EnhancedCleanupService {
       }
     };
 
-    // Add all event listeners
-    window.addEventListener('beforeunload', handleBeforeUnload);
-    window.addEventListener('unload', handleUnload);
-    window.addEventListener('pagehide', handleUnload);
+    // Add enhanced handlers that work alongside presenceService handlers
     document.addEventListener('visibilitychange', handleVisibilityChange);
     window.addEventListener('offline', handleOffline);
 
-    // Store references for cleanup
-    (window as any).__cleanupHandlers = {
-      handleBeforeUnload,
-      handleUnload,
+    // Store enhanced handler references for cleanup
+    (window as any).__enhancedCleanupHandlers = {
       handleVisibilityChange,
       handleOffline
     };
@@ -193,20 +181,17 @@ class EnhancedCleanupService {
   }
 
   /**
-   * Remove browser event handlers
+   * Remove enhanced browser event handlers
    */
   removeBrowserCleanupHandlers(): void {
     if (!this.browserEventsSetup) return;
 
-    const handlers = (window as any).__cleanupHandlers;
+    const handlers = (window as any).__enhancedCleanupHandlers;
     if (handlers) {
-      window.removeEventListener('beforeunload', handlers.handleBeforeUnload);
-      window.removeEventListener('unload', handlers.handleUnload);
-      window.removeEventListener('pagehide', handlers.handleUnload);
       document.removeEventListener('visibilitychange', handlers.handleVisibilityChange);
       window.removeEventListener('offline', handlers.handleOffline);
-      
-      delete (window as any).__cleanupHandlers;
+
+      delete (window as any).__enhancedCleanupHandlers;
     }
 
     this.browserEventsSetup = false;
