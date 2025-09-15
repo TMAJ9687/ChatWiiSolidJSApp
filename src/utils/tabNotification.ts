@@ -11,13 +11,10 @@ class TabNotification {
    * Initialize with the original page title
    */
   init() {
-    // Delay initialization to ensure SEOHead has set the title first
-    setTimeout(() => {
-      // Get the actual current title from the document (set by SEOHead component)
-      // Only fall back to 'ChatWii' if no title is set at all
-      this.originalTitle = document.title || 'ChatWii';
-      console.log('TabNotification init - captured title:', this.originalTitle);
-    }, 100); // Small delay to ensure SEO component has run
+    // Get the actual current title from the document (set by SEOHead component)
+    // Only fall back to 'ChatWii' if no title is set at all
+    this.originalTitle = document.title || 'ChatWii';
+    console.log('TabNotification init - captured title:', this.originalTitle);
   }
 
   /**
