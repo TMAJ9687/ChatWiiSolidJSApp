@@ -40,6 +40,11 @@ class ImageService {
 
   // Compress image if needed
   private async compressImage(file: File): Promise<File> {
+    // Skip compression for GIFs to preserve animation
+    if (file.type === 'image/gif') {
+      return file;
+    }
+
     return new Promise((resolve) => {
       const canvas = document.createElement('canvas');
       const ctx = canvas.getContext('2d');
@@ -60,7 +65,7 @@ class ImageService {
 
         // Draw and compress
         ctx?.drawImage(img, 0, 0, width, height);
-        
+
         canvas.toBlob((blob) => {
           if (blob) {
             const compressedFile = new File([blob], file.name, {

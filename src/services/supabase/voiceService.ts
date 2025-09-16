@@ -242,6 +242,18 @@ class VoiceService {
   }
 
   /**
+   * Check if voice recording is supported by the browser
+   */
+  isSupported(): boolean {
+    return !!(
+      navigator.mediaDevices &&
+      navigator.mediaDevices.getUserMedia &&
+      window.MediaRecorder &&
+      MediaRecorder.isTypeSupported
+    );
+  }
+
+  /**
    * Check if user can send voice messages (VIP/Admin only)
    */
   canSendVoiceMessage(userRole: string): boolean {
