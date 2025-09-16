@@ -797,7 +797,7 @@ const ChatArea: Component<ChatAreaProps> = (props) => {
               <FiImage class="w-4 h-4 sm:w-5 sm:h-5 text-text-600 dark:text-text-400" />
               <input
                 type="file"
-                accept="image/*"
+                accept="image/jpeg,image/jpg,image/png,image/gif,image/webp"
                 class="hidden"
                 onChange={handleImageSelect}
                 disabled={isBlocked() || isBlockedBy()}
