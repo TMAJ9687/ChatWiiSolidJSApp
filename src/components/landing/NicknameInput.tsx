@@ -13,11 +13,12 @@ const NicknameInput: Component<NicknameInputProps> = (props) => {
 
   return (
     <div class="space-y-2">
-      <label class="text-sm font-medium text-text-800 dark:text-text-200">
+      <label for="nickname-input" class="text-sm font-medium text-text-800 dark:text-text-200">
         Nickname
       </label>
       <div class="relative">
         <input
+          id="nickname-input"
           type="text"
           value={props.value}
           onInput={(e) => props.onInput(e.currentTarget.value)}

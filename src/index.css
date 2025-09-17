@@ -7,6 +7,41 @@
     font-family: "Open Sans", system-ui, sans-serif;
   }
 
+  /* Improved contrast for accessibility compliance */
+  .text-text-400 {
+    color: #6B7280; /* Darker gray - WCAG AA compliant */
+  }
+
+  .dark .text-text-600 {
+    color: #9CA3AF; /* Lighter for dark mode */
+  }
+
+  /* Better contrast for placeholder text */
+  input::placeholder,
+  textarea::placeholder {
+    color: #6B7280; /* Darker placeholder text */
+    opacity: 1;
+  }
+
+  .dark input::placeholder,
+  .dark textarea::placeholder {
+    color: #9CA3AF; /* Appropriate contrast in dark mode */
+    opacity: 1;
+  }
+
+  /* Screen reader only class for accessibility labels */
+  .sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+  }
+
   body {
     @apply antialiased text-neutral-900 dark:text-neutral-100;
   }

@@ -11,11 +11,12 @@ const AgeDropdown: Component<AgeDropdownProps> = (props) => {
 
   return (
     <div class="space-y-2">
-      <label class="text-sm font-medium text-text-800 dark:text-text-200">
+      <label for="age-select" class="text-sm font-medium text-text-800 dark:text-text-200">
         Age
       </label>
       <div class="relative">
         <select
+          id="age-select"
           value={props.value || ""}
           onChange={(e) => props.onChange(parseInt(e.currentTarget.value))}
           class="w-full px-4 py-3 pr-10 border border-neutral-200 dark:border-neutral-700 rounded-lg
