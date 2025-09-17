@@ -35,15 +35,11 @@ const SEOHead: Component<SEOProps> = (props) => {
 
   // Update tabNotification service with the correct title when component mounts
   onMount(() => {
-    console.log('SEOHead mounted with title:', fullTitle);
-
     // Set title immediately AND with slight delay to override any other setters
     document.title = fullTitle;
-    console.log('Direct document.title set to:', document.title);
 
     setTimeout(() => {
       document.title = fullTitle;
-      console.log('Delayed document.title set to:', document.title);
       tabNotification.setOriginalTitle(fullTitle);
     }, 50);
   });

@@ -1,15 +1,17 @@
-import { Component, onMount, onCleanup } from "solid-js";
+import { Component, onMount, onCleanup, lazy } from "solid-js";
 import { Router, Route } from "@solidjs/router";
 import Landing from "./pages/Landing";
 import Chat from "./pages/Chat";
-import Admin from "./pages/Admin";
-import AdminLogin from "./pages/AdminLogin";
-import Idle from './pages/Idle';
-import Feedback from "./pages/Feedback";
-import About from "./pages/About";
-import Privacy from "./pages/Privacy";
-import Safety from "./pages/Safety";
-import HowItWorks from "./pages/HowItWorks";
+
+// Lazy load admin and less critical pages
+const Admin = lazy(() => import("./pages/Admin"));
+const AdminLogin = lazy(() => import("./pages/AdminLogin"));
+const Idle = lazy(() => import('./pages/Idle'));
+const Feedback = lazy(() => import("./pages/Feedback"));
+const About = lazy(() => import("./pages/About"));
+const Privacy = lazy(() => import("./pages/Privacy"));
+const Safety = lazy(() => import("./pages/Safety"));
+const HowItWorks = lazy(() => import("./pages/HowItWorks"));
 
 const App: Component = () => {
   let cleanupInterval: NodeJS.Timeout | null = null;
