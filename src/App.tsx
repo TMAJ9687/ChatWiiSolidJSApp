@@ -1,9 +1,9 @@
 import { Component, onMount, onCleanup, lazy } from "solid-js";
 import { Router, Route } from "@solidjs/router";
 import Landing from "./pages/Landing";
-import Chat from "./pages/Chat";
 
-// Lazy load admin and less critical pages
+// Lazy load all non-critical pages including chat
+const Chat = lazy(() => import("./pages/Chat"));
 const Admin = lazy(() => import("./pages/Admin"));
 const AdminLogin = lazy(() => import("./pages/AdminLogin"));
 const Idle = lazy(() => import('./pages/Idle'));

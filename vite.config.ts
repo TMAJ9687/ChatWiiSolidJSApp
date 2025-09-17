@@ -2,33 +2,48 @@ import { defineConfig } from "vite";
 import solid from "vite-plugin-solid";
 import path from "path";
 
-// Plugin to preload critical resources
-function resourcePreloadPlugin() {
+// Plugin for critical CSS inlining and async loading
+function criticalCSSPlugin() {
   return {
-    name: 'resource-preload',
+    name: 'critical-css',
     transformIndexHtml(html: string, context: any) {
       if (context.bundle) {
         const cssFiles = Object.keys(context.bundle).filter(file => file.endsWith('.css'));
-        const jsFiles = Object.keys(context.bundle).filter(file =>
-          file.startsWith('vendor') && file.endsWith('.js')
-        );
 
-        let preloadTags = '';
+        if (cssFiles.length > 0) {
+          const cssFile = cssFiles[0];
 
-        // Preload vendor JS
-        jsFiles.forEach(file => {
-          preloadTags += `\n    <link rel="modulepreload" href="/assets/${file}">`;
-        });
+          // Critical CSS (above-the-fold styles)
+          const criticalCSS = `
+    <style>
+      /* Critical CSS for above-the-fold content */
+      html{font-family:"Open Sans",system-ui,sans-serif}
+      body{margin:0;padding:0;-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale}
+      .bg-white{background-color:#fff}
+      .dark .bg-neutral-800{background-color:#262626}
+      .text-text-1000{color:#0a0a0a}
+      .dark .text-text-0{color:#fafafa}
+      .flex{display:flex}
+      .items-center{align-items:center}
+      .justify-center{justify-content:center}
+      .min-h-screen{min-height:100vh}
+      .w-full{width:100%}
+      .max-w-md{max-width:28rem}
+      .mx-auto{margin-left:auto;margin-right:auto}
+      .p-4{padding:1rem}
+      .space-y-4>*+*{margin-top:1rem}
+      .rounded-xl{border-radius:0.75rem}
+      .shadow-xl{box-shadow:0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1)}
+    </style>`;
 
-        // Preload CSS
-        cssFiles.forEach(file => {
-          preloadTags += `\n    <link rel="preload" href="/${file}" as="style">`;
-        });
+          // Async CSS loading
+          const asyncCSS = `
+    <link rel="preload" href="/${cssFile}" as="style" onload="this.onload=null;this.rel='stylesheet'">
+    <noscript><link rel="stylesheet" href="/${cssFile}"></noscript>`;
 
-        if (preloadTags) {
           return html.replace(
             '<title>ChatWii</title>',
-            `${preloadTags}\n    <title>ChatWii</title>`
+            `${criticalCSS}\n${asyncCSS}\n    <title>ChatWii</title>`
           );
         }
       }
@@ -38,7 +53,7 @@ function resourcePreloadPlugin() {
 }
 
 export default defineConfig({
-  plugins: [solid(), resourcePreloadPlugin()],
+  plugins: [solid(), criticalCSSPlugin()],
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),
