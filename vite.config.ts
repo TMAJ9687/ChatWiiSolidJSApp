@@ -48,22 +48,12 @@ export default defineConfig({
     port: 3000,
   },
   build: {
-    minify: 'terser',
-    terserOptions: {
-      compress: {
-        // More aggressive console removal and optimization
-        drop_console: true,
-        drop_debugger: true,
-        pure_funcs: ['console.log', 'console.info', 'console.debug', 'console.warn', 'console.table']
-      },
-    },
     rollupOptions: {
       output: {
-        manualChunks: {
-          // Only split major vendor libraries to avoid over-chunking
-          vendor: ['solid-js', '@solidjs/router', '@solidjs/meta', '@supabase/supabase-js']
-        }
+        manualChunks: undefined, // Disable splitting for now
       }
-    }
+    },
+    minify: 'esbuild',
+    target: 'es2020'
   },
 });

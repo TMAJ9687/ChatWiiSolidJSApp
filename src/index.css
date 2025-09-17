@@ -9,7 +9,7 @@
 
   /* Improved contrast for accessibility compliance */
   .text-text-400 {
-    color: #6B7280; /* Darker gray - WCAG AA compliant */
+    color: #6B7280 !important; /* Darker gray - WCAG AA compliant */
   }
 
   .dark .text-text-600 {
