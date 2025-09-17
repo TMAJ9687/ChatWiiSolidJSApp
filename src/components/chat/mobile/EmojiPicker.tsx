@@ -1,5 +1,8 @@
 import { createSignal, For, Show, onMount } from 'solid-js';
 import { FiSearch, FiClock, FiX } from 'solid-icons/fi';
+import { createServiceLogger } from '../../../utils/logger';
+
+const logger = createServiceLogger('EmojiPicker');
 
 interface EmojiPickerProps {
   isOpen: boolean;
@@ -177,7 +180,7 @@ export default function EmojiPicker(props: EmojiPickerProps) {
         EMOJI_CATEGORIES[0].emojis = recent;
       }
     } catch (error) {
-      console.error('Error loading recent emojis:', error);
+      logger.error('Error loading recent emojis:', error);
     }
   };
 
@@ -192,7 +195,7 @@ export default function EmojiPicker(props: EmojiPickerProps) {
     try {
       localStorage.setItem('chatwii-recent-emojis', JSON.stringify(updated));
     } catch (error) {
-      console.error('Error saving recent emoji:', error);
+      logger.error('Error saving recent emoji:', error);
     }
   };
 

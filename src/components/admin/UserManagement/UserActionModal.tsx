@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { User } from '../../../types/user.types';
+import { createServiceLogger } from '../../../utils/logger';
 
 interface UserActionModalProps {
   user: User;
@@ -7,6 +8,8 @@ interface UserActionModalProps {
   onConfirm: (reason?: string, duration?: number) => Promise<void>;
   onCancel: () => void;
 }
+
+const logger = createServiceLogger('UserActionModal');
 
 export const UserActionModal: React.FC<UserActionModalProps> = ({
   user,
@@ -137,7 +140,7 @@ export const UserActionModal: React.FC<UserActionModalProps> = ({
         await onConfirm(reason || undefined);
       }
     } catch (err) {
-      console.error(`Error performing ${action} action:`, err);
+      logger.error(`Error performing ${action} action:`, err);
       setError(err instanceof Error ? err.message : 'An error occurred');
     } finally {
       setLoading(false);

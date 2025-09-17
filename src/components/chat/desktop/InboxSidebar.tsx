@@ -3,6 +3,9 @@ import { FiX, FiInbox } from 'solid-icons/fi';
 import type { Message } from '../../../types/message.types';
 import type { User } from '../../../types/user.types';
 import { messageService, conversationService } from '../../../services/supabase';
+import { createServiceLogger } from '../../../utils/logger';
+
+const logger = createServiceLogger('InboxSidebar');
 
 interface InboxSidebarProps {
   isOpen: boolean;
@@ -106,7 +109,7 @@ const InboxSidebar: Component<InboxSidebarProps> = (props) => {
       
       setInboxItems(items);
     } catch (error) {
-      console.error('Error loading inbox:', error);
+      logger.error('Error loading inbox:', error);
       setInboxItems([]);
     }
   });

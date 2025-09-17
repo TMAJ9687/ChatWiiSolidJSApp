@@ -3,6 +3,9 @@ import { useNavigate } from "@solidjs/router";
 import { FiShield, FiEye, FiEyeOff } from "solid-icons/fi";
 import { authService } from "../services/supabase";
 import SEOHead from "../components/seo/SEOHead";
+import { createServiceLogger } from "../utils/logger";
+
+const logger = createServiceLogger('AdminLogin');
 
 const AdminLogin: Component = () => {
   const navigate = useNavigate();
@@ -54,7 +57,7 @@ const AdminLogin: Component = () => {
       // Success - redirect to admin panel
       navigate("/admin");
     } catch (error) {
-      console.error("Admin login failed:", error);
+      logger.error("Admin login failed:", error);
       setAttempts(attempts() + 1);
       
       if (attempts() >= 4) {

@@ -1,4 +1,7 @@
 import { supabase } from "../../config/supabase";
+import { createServiceLogger } from "../../utils/logger";
+
+const logger = createServiceLogger('CleanupService');
 
 interface CleanupStats {
   totalAnonymousUsers: number;
@@ -30,7 +33,7 @@ class CleanupService {
       const { data, error } = await supabase.rpc('get_anonymous_user_stats');
       
       if (error) {
-        console.error('Error getting anonymous user stats:', error);
+        logger.error('Error getting anonymous user stats:', error);
         throw error;
       }
 
@@ -42,7 +45,7 @@ class CleanupService {
         readyForCleanup: parseInt(stats.ready_for_cleanup) || 0
       };
     } catch (error) {
-      console.error('Error fetching cleanup stats:', error);
+      logger.error('Error fetching cleanup stats:', error);
       return {
         totalAnonymousUsers: 0,
         activeAnonymousUsers: 0,
@@ -60,7 +63,7 @@ class CleanupService {
       const { data, error } = await supabase.rpc('safe_cleanup_anonymous_users', { dry_run: true });
       
       if (error) {
-        console.error('Error running dry cleanup:', error);
+        logger.error('Error running dry cleanup:', error);
         throw error;
       }
 
@@ -71,7 +74,7 @@ class CleanupService {
         details: result.details || 'No details available'
       };
     } catch (error) {
-      console.error('Error in dry run cleanup:', error);
+      logger.error('Error in dry run cleanup:', error);
       return {
         action: 'ERROR',
         count: 0,
@@ -89,7 +92,7 @@ class CleanupService {
       const { data, error } = await supabase.rpc('safe_cleanup_anonymous_users', { dry_run: false });
       
       if (error) {
-        console.error('Error executing cleanup:', error);
+        logger.error('Error executing cleanup:', error);
         throw error;
       }
 
@@ -100,7 +103,7 @@ class CleanupService {
         details: result.details || 'No details available'
       };
     } catch (error) {
-      console.error('Error executing cleanup:', error);
+      logger.error('Error executing cleanup:', error);
       throw error;
     }
   }
@@ -113,11 +116,11 @@ class CleanupService {
       const { error } = await supabase.rpc('cleanup_anonymous_users_with_logging');
       
       if (error) {
-        console.error('Error executing cleanup with logging:', error);
+        logger.error('Error executing cleanup with logging:', error);
         throw error;
       }
     } catch (error) {
-      console.error('Error in cleanup with logging:', error);
+      logger.error('Error in cleanup with logging:', error);
       throw error;
     }
   }
@@ -134,7 +137,7 @@ class CleanupService {
         .limit(limit);
       
       if (error) {
-        console.error('Error getting cleanup logs:', error);
+        logger.error('Error getting cleanup logs:', error);
         throw error;
       }
 
@@ -146,7 +149,7 @@ class CleanupService {
         executedAt: log.executed_at
       }));
     } catch (error) {
-      console.error('Error fetching cleanup logs:', error);
+      logger.error('Error fetching cleanup logs:', error);
       return [];
     }
   }
@@ -165,13 +168,13 @@ class CleanupService {
         .limit(1);
       
       if (error) {
-        console.error('Error checking cleanup activity:', error);
+        logger.error('Error checking cleanup activity:', error);
         return false;
       }
 
       return (data?.length || 0) > 0;
     } catch (error) {
-      console.error('Error checking automatic cleanup:', error);
+      logger.error('Error checking automatic cleanup:', error);
       return false;
     }
   }
@@ -211,7 +214,7 @@ class CleanupService {
         result
       };
     } catch (error) {
-      console.error('Error in manual cleanup:', error);
+      logger.error('Error in manual cleanup:', error);
       return {
         success: false,
         result: {
@@ -235,7 +238,7 @@ class CleanupService {
         details_text: result.details
       });
     } catch (error) {
-      console.error('Error logging manual operation:', error);
+      logger.error('Error logging manual operation:', error);
     }
   }
 
@@ -262,7 +265,7 @@ class CleanupService {
         isAutomaticActive: isActive
       };
     } catch (error) {
-      console.error('Error getting cleanup summary:', error);
+      logger.error('Error getting cleanup summary:', error);
       return {
         stats: {
           totalAnonymousUsers: 0,
@@ -294,7 +297,7 @@ class CleanupService {
         message: data?.message || 'Automatic cleanup enabled.'
       };
     } catch (error) {
-      console.error('Error enabling automatic cleanup:', error);
+      logger.error('Error enabling automatic cleanup:', error);
       return {
         success: false,
         message: `Failed to enable automatic cleanup: ${error.message || 'Unknown error'}`
@@ -318,7 +321,7 @@ class CleanupService {
         message: data?.message || 'Automatic cleanup disabled.'
       };
     } catch (error) {
-      console.error('Error disabling automatic cleanup:', error);
+      logger.error('Error disabling automatic cleanup:', error);
       return {
         success: false,
         message: `Failed to disable automatic cleanup: ${error.message || 'Unknown error'}`

@@ -1,3 +1,7 @@
+import { createServiceLogger } from './logger';
+
+const logger = createServiceLogger('SitemapGenerator');
+
 // Dynamic Sitemap Generator for ChatWii
 // This will be used for generating programmatic sitemaps as the site scales
 
@@ -244,5 +248,5 @@ export async function generateCompleteSitemap(): Promise<string> {
 export async function updateSitemap(newUrls: SitemapUrl[]): Promise<void> {
   // This would integrate with your build process or API
   // to dynamically update the sitemap as new content is created
-  console.log(`Adding ${newUrls.length} new URLs to sitemap`);
+  logger.info(`Adding ${newUrls.length} new URLs to sitemap`);
 }

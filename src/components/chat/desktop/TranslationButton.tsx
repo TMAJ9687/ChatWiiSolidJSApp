@@ -1,6 +1,9 @@
 import { createSignal, Show } from 'solid-js';
 import { FiGlobe, FiLoader } from 'solid-icons/fi';
 import { translationService, type TranslationResponse } from '../../../services/supabase';
+import { createServiceLogger } from '../../../utils/logger';
+
+const logger = createServiceLogger('TranslationButton');
 
 interface TranslationButtonProps {
   text: string;
@@ -43,7 +46,7 @@ export default function TranslationButton(props: TranslationButtonProps) {
         props.onTranslationToggle?.(null);
       }
     } catch (error) {
-      console.error('Translation failed:', error);
+      logger.error('Translation failed:', error);
       setTranslation(null);
       setShowTranslation(false);
       props.onTranslationToggle?.(null);

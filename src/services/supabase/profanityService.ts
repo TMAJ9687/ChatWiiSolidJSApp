@@ -1,5 +1,8 @@
 import { supabase } from "../../config/supabase";
 import type { AdminActionResult } from "../../types/admin.types";
+import { createServiceLogger } from "../../utils/logger";
+
+const logger = createServiceLogger('ProfanityService');
 
 export interface ProfanityWord {
   id: string;
@@ -72,7 +75,7 @@ class ProfanityService {
         data: this.convertToProfanityWord(data)
       };
     } catch (error) {
-      console.error("Error adding profanity word:", error);
+      logger.error("Error adding profanity word:", error);
       return {
         success: false,
         message: error instanceof Error ? error.message : 'Failed to add word'
@@ -110,7 +113,7 @@ class ProfanityService {
         data: { id: wordId, word: wordData?.word, type: wordData?.type }
       };
     } catch (error) {
-      console.error("Error removing profanity word:", error);
+      logger.error("Error removing profanity word:", error);
       return {
         success: false,
         message: error instanceof Error ? error.message : 'Failed to remove word'
@@ -133,13 +136,13 @@ class ProfanityService {
       const { data, error } = await query;
 
       if (error) {
-        console.error("Error getting profanity words:", error);
+        logger.error("Error getting profanity words:", error);
         return [];
       }
 
       return (data || []).map(this.convertToProfanityWord);
     } catch (error) {
-      console.error("Error getting profanity words:", error);
+      logger.error("Error getting profanity words:", error);
       return [];
     }
   }
@@ -173,7 +176,7 @@ class ProfanityService {
         cleanedText: isClean ? text : this.cleanText(text, blockedWords)
       };
     } catch (error) {
-      console.error("Error checking text for profanity:", error);
+      logger.error("Error checking text for profanity:", error);
       // Return as clean on error to avoid blocking legitimate content
       return { isClean: true, blockedWords: [] };
     }
@@ -239,7 +242,7 @@ class ProfanityService {
         data: { successCount, failureCount, results }
       };
     } catch (error) {
-      console.error("Error importing words:", error);
+      logger.error("Error importing words:", error);
       return {
         success: false,
         message: error instanceof Error ? error.message : 'Failed to import words'
@@ -263,7 +266,7 @@ class ProfanityService {
         }
       };
     } catch (error) {
-      console.error("Error exporting words:", error);
+      logger.error("Error exporting words:", error);
       return {
         success: false,
         message: error instanceof Error ? error.message : 'Failed to export words'
@@ -295,7 +298,7 @@ class ProfanityService {
         recentlyAdded: recentResult.count || 0
       };
     } catch (error) {
-      console.error("Error getting profanity statistics:", error);
+      logger.error("Error getting profanity statistics:", error);
       return {
         totalWords: 0,
         nicknameWords: 0,
@@ -331,7 +334,7 @@ class ProfanityService {
         message: `All ${type} profanity words cleared`
       };
     } catch (error) {
-      console.error(`Error clearing ${type} words:`, error);
+      logger.error(`Error clearing ${type} words:`, error);
       return {
         success: false,
         message: error instanceof Error ? error.message : `Failed to clear ${type} words`
@@ -376,7 +379,7 @@ class ProfanityService {
         .eq("type", type);
 
       if (error) {
-        console.error(`Error updating ${type} cache:`, error);
+        logger.error(`Error updating ${type} cache:`, error);
         return;
       }
 
@@ -391,7 +394,7 @@ class ProfanityService {
 
       this.cacheLastUpdated[type] = Date.now();
     } catch (error) {
-      console.error(`Error updating ${type} cache:`, error);
+      logger.error(`Error updating ${type} cache:`, error);
     }
   }
 
@@ -452,7 +455,7 @@ class ProfanityService {
         }
       };
     } catch (error) {
-      console.error("Error testing profanity detection:", error);
+      logger.error("Error testing profanity detection:", error);
       return {
         success: false,
         message: error instanceof Error ? error.message : 'Failed to test profanity detection'

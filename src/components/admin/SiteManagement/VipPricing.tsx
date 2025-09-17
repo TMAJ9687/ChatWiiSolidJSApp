@@ -1,6 +1,7 @@
 import { Component, createSignal, onMount, Show, For } from "solid-js";
 import { FiSave, FiRefreshCw, FiDollarSign, FiTrendingUp, FiCalendar, FiHistory } from "solid-icons/fi";
 import { siteSettingsService } from "../../../services/supabase/siteSettingsService";
+import { createServiceLogger } from "../../../utils/logger";
 
 interface VipPricingData {
   monthlyPrice: number;
@@ -21,6 +22,8 @@ interface PriceHistory {
 interface VipPricingProps {
   currentUserId: string;
 }
+
+const logger = createServiceLogger('VipPricing');
 
 const VipPricing: Component<VipPricingProps> = (props) => {
   const [pricing, setPricing] = createSignal<VipPricingData>({
@@ -55,7 +58,7 @@ const VipPricing: Component<VipPricingProps> = (props) => {
         yearlyPrice: parseFloat(yearlyPrice) || 89.99,
       });
     } catch (error) {
-      console.error("Error loading VIP pricing:", error);
+      logger.error("Error loading VIP pricing:", error);
     } finally {
       setLoading(false);
     }
@@ -69,7 +72,7 @@ const VipPricing: Component<VipPricingProps> = (props) => {
         setPriceHistory(history.slice(0, 10)); // Show last 10 changes
       }
     } catch (error) {
-      console.error("Error loading price history:", error);
+      logger.error("Error loading price history:", error);
     }
   };
 
@@ -169,7 +172,7 @@ const VipPricing: Component<VipPricingProps> = (props) => {
 
       alert("VIP pricing updated successfully! Changes will be reflected on the site immediately.");
     } catch (error) {
-      console.error("Error saving VIP pricing:", error);
+      logger.error("Error saving VIP pricing:", error);
       alert("Failed to save pricing. Please try again.");
     } finally {
       setSaving(false);

@@ -1,6 +1,9 @@
 import { createSignal, createEffect, For, Show, onCleanup } from 'solid-js';
 import { reactionService } from '../../../services/supabase';
 import type { MessageReaction, ReactionSummary } from '../../../types/message.types';
+import { createServiceLogger } from '../../../utils/logger';
+
+const logger = createServiceLogger('ReactionDisplay');
 
 interface ReactionDisplayProps {
   messageId: string;
@@ -55,7 +58,7 @@ export default function ReactionDisplay(props: ReactionDisplayProps) {
     try {
       await reactionService.toggleReaction(props.messageId, emoji, props.userNickname);
     } catch (error) {
-      console.error('Error toggling reaction:', error);
+      logger.error('Error toggling reaction:', error);
     }
   };
 

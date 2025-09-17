@@ -1,5 +1,8 @@
 import { supabase } from "../../config/supabase";
 import type { Database } from "../../types/database.types";
+import { createServiceLogger } from "../../utils/logger";
+
+const logger = createServiceLogger('PhotoTrackingService');
 
 type SupabasePhotoUsage = Database['public']['Tables']['photo_usage']['Row'];
 type SupabasePhotoUsageInsert = Database['public']['Tables']['photo_usage']['Insert'];
@@ -36,7 +39,7 @@ class PhotoTrackingService {
     try {
       // Validate userId
       if (!userId || !userId.trim()) {
-        console.warn('Invalid userId for photo usage tracking');
+        logger.warn('Invalid userId for photo usage tracking');
         return;
       }
 
@@ -56,14 +59,14 @@ class PhotoTrackingService {
           // No existing record found - continue to create new one
         } else if (fetchError.code === 'PGRST301' || fetchError.message?.includes('relation "public.photo_usage" does not exist')) {
           // Table doesn't exist - silently skip photo tracking
-          console.warn('Photo usage table not available - skipping tracking');
+          logger.warn('Photo usage table not available - skipping tracking');
           return;
         } else if (fetchError.message?.includes('406') || fetchError.message?.includes('Not Acceptable')) {
           // 406 errors - likely RLS policy issues
-          console.warn('Photo usage access denied - skipping tracking');
+          logger.warn('Photo usage access denied - skipping tracking');
           return;
         } else {
-          console.error('Photo usage fetch error:', fetchError);
+          logger.error('Photo usage fetch error:', fetchError);
           return; // Don't throw, just return to prevent 406 errors
         }
       }
@@ -79,7 +82,7 @@ class PhotoTrackingService {
           .eq('id', existingUsage.id);
 
         if (updateError) {
-          console.error('Photo usage update error:', updateError);
+          logger.error('Photo usage update error:', updateError);
           return; // Don't throw to prevent 406 errors
         }
       } else {
@@ -95,12 +98,12 @@ class PhotoTrackingService {
           .insert([usageData]);
 
         if (insertError) {
-          console.error('Photo usage insert error:', insertError);
+          logger.error('Photo usage insert error:', insertError);
           return; // Don't throw to prevent 406 errors
         }
       }
     } catch (error) {
-      console.error('Error tracking photo usage:', error);
+      logger.error('Error tracking photo usage:', error);
       // Don't re-throw to prevent 406 errors from bubbling up
     }
   }
@@ -127,7 +130,7 @@ class PhotoTrackingService {
       const currentCount = data?.count || 0;
       return currentCount >= limit;
     } catch (error) {
-      console.error('Error checking daily limit:', error);
+      logger.error('Error checking daily limit:', error);
       return false; // Allow usage if we can't check
     }
   }
@@ -156,7 +159,7 @@ class PhotoTrackingService {
         remaining
       };
     } catch (error) {
-      console.error('Error checking if can send photo:', error);
+      logger.error('Error checking if can send photo:', error);
       return { canSend: true }; // Allow on error
     }
   }
@@ -168,7 +171,7 @@ class PhotoTrackingService {
     try {
       // Validate userId
       if (!userId || !userId.trim()) {
-        console.warn('Invalid userId for photo usage check');
+        logger.warn('Invalid userId for photo usage check');
         return 0;
       }
 
@@ -188,21 +191,21 @@ class PhotoTrackingService {
           return 0;
         } else if (error.code === 'PGRST301' || error.message?.includes('relation "public.photo_usage" does not exist')) {
           // Table doesn't exist
-          console.warn('Photo usage table not available');
+          logger.warn('Photo usage table not available');
           return 0;
         } else if (error.message?.includes('406') || error.message?.includes('Not Acceptable')) {
           // 406 errors - RLS policy issues
-          console.warn('Photo usage access denied');
+          logger.warn('Photo usage access denied');
           return 0;
         } else {
-          console.error('Photo usage query error:', error);
+          logger.error('Photo usage query error:', error);
           return 0;
         }
       }
 
       return data?.count || 0;
     } catch (error) {
-      console.error('Error getting today usage:', error);
+      logger.error('Error getting today usage:', error);
       return 0;
     }
   }
@@ -217,7 +220,7 @@ class PhotoTrackingService {
       
       return Math.max(0, limit - todayUsage);
     } catch (error) {
-      console.error('Error getting remaining allowance:', error);
+      logger.error('Error getting remaining allowance:', error);
       return 0;
     }
   }
@@ -292,7 +295,7 @@ class PhotoTrackingService {
         total: (totalData || []).reduce((sum, usage) => sum + usage.count, 0)
       };
     } catch (error) {
-      console.error('Error getting photo usage stats:', error);
+      logger.error('Error getting photo usage stats:', error);
       return {
         today: 0,
         thisWeek: 0,
@@ -322,7 +325,7 @@ class PhotoTrackingService {
         throw error;
       }
     } catch (error) {
-      console.error('Error resetting daily usage:', error);
+      logger.error('Error resetting daily usage:', error);
       throw error;
     }
   }
@@ -379,7 +382,7 @@ class PhotoTrackingService {
         activeUsersToday: (todayData || []).filter(usage => usage.count > 0).length
       };
     } catch (error) {
-      console.error('Error getting system photo stats:', error);
+      logger.error('Error getting system photo stats:', error);
       return {
         totalPhotosToday: 0,
         totalPhotosThisWeek: 0,
@@ -407,7 +410,7 @@ class PhotoTrackingService {
         throw error;
       }
     } catch (error) {
-      console.error('Error cleaning up old records:', error);
+      logger.error('Error cleaning up old records:', error);
     }
   }
 }

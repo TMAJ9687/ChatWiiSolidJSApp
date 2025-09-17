@@ -1,5 +1,8 @@
 import { supabase } from "../../config/supabase";
 import type { Database } from "../../types/database.types";
+import { createServiceLogger } from "../../utils/logger";
+
+const logger = createServiceLogger('BlockingService');
 
 type SupabaseBlock = Database['public']['Tables']['blocks']['Row'];
 type SupabaseBlockInsert = Database['public']['Tables']['blocks']['Insert'];
@@ -44,7 +47,7 @@ class BlockingService {
         throw error;
       }
     } catch (error) {
-      console.error('Error blocking user:', error);
+      logger.error('Error blocking user:', error);
       throw error;
     }
   }
@@ -69,7 +72,7 @@ class BlockingService {
         throw error;
       }
     } catch (error) {
-      console.error('Error unblocking user:', error);
+      logger.error('Error unblocking user:', error);
       throw error;
     }
   }
@@ -105,17 +108,17 @@ class BlockingService {
         
         // For 406 or policy errors, assume not blocked to prevent UI issues
         if (error.code === 'PGRST301' || error.message?.includes('406') || error.message?.includes('policy')) {
-          console.warn('RLS policy prevented blocking check, assuming not blocked:', { currentUserId: currentUserId.substring(0, 8), targetUserId: targetUserId.substring(0, 8) });
+          logger.warn('RLS policy prevented blocking check, assuming not blocked:', { currentUserId: currentUserId.substring(0, 8), targetUserId: targetUserId.substring(0, 8) });
           return false;
         }
         
-        console.error('Blocking query error:', error);
+        logger.error('Blocking query error:', error);
         return false;
       }
 
       return !!data;
     } catch (error) {
-      console.warn('Error checking if user is blocked, assuming not blocked:', error);
+      logger.warn('Error checking if user is blocked, assuming not blocked:', error);
       return false;
     }
   }
@@ -141,7 +144,7 @@ class BlockingService {
 
       return !!data;
     } catch (error) {
-      console.error('Error checking if blocked by user:', error);
+      logger.error('Error checking if blocked by user:', error);
       return false;
     }
   }
@@ -173,7 +176,7 @@ class BlockingService {
         reason: block.reason
       }));
     } catch (error) {
-      console.error('Error getting blocked users:', error);
+      logger.error('Error getting blocked users:', error);
       return [];
     }
   }
@@ -197,7 +200,7 @@ class BlockingService {
 
       return (data || []).map(block => block.blocker_id);
     } catch (error) {
-      console.error('Error getting users who blocked me:', error);
+      logger.error('Error getting users who blocked me:', error);
       return [];
     }
   }
@@ -219,7 +222,7 @@ class BlockingService {
       // If no blocks found, they can communicate
       return (data?.length || 0) === 0;
     } catch (error) {
-      console.error('Error checking communication status:', error);
+      logger.error('Error checking communication status:', error);
       return false; // Be safe and assume they can't communicate on error
     }
   }
@@ -257,7 +260,7 @@ class BlockingService {
       // Filter out blocked users
       return userIds.filter(id => !blockedUserIds.has(id));
     } catch (error) {
-      console.error('Error filtering blocked users:', error);
+      logger.error('Error filtering blocked users:', error);
       return userIds; // Return original list on error
     }
   }
@@ -312,7 +315,7 @@ class BlockingService {
         topBlockedUsers
       };
     } catch (error) {
-      console.error('Error getting block stats:', error);
+      logger.error('Error getting block stats:', error);
       return {
         totalBlocks: 0,
         topBlockedUsers: []

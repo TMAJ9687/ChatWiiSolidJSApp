@@ -1,5 +1,8 @@
 import { supabase } from "../../config/supabase";
 import type { Database } from "../../types/database.types";
+import { createServiceLogger } from "../../utils/logger";
+
+const logger = createServiceLogger('ReportingService');
 
 type SupabaseReport = Database['public']['Tables']['reports']['Row'];
 type SupabaseReportInsert = Database['public']['Tables']['reports']['Insert'];
@@ -66,7 +69,7 @@ class ReportingService {
         throw error;
       }
     } catch (error) {
-      console.error('Error submitting report:', error);
+      logger.error('Error submitting report:', error);
       throw error;
     }
   }
@@ -87,13 +90,13 @@ class ReportingService {
         .single();
 
       if (error && error.code !== 'PGRST116') {
-        console.error('Error checking report status:', error);
+        logger.error('Error checking report status:', error);
         return false;
       }
 
       return !!data;
     } catch (error) {
-      console.error('Error checking if user has been reported:', error);
+      logger.error('Error checking if user has been reported:', error);
       return false;
     }
   }
@@ -128,7 +131,7 @@ class ReportingService {
         adminNotes: report.admin_notes || undefined
       }));
     } catch (error) {
-      console.error('Error getting user reports:', error);
+      logger.error('Error getting user reports:', error);
       return [];
     }
   }
@@ -159,7 +162,7 @@ class ReportingService {
         adminNotes: report.admin_notes || undefined
       }));
     } catch (error) {
-      console.error('Error getting all reports:', error);
+      logger.error('Error getting all reports:', error);
       return [];
     }
   }
@@ -182,7 +185,7 @@ class ReportingService {
         throw error;
       }
     } catch (error) {
-      console.error('Error marking report as reviewed:', error);
+      logger.error('Error marking report as reviewed:', error);
       throw error;
     }
   }
@@ -228,7 +231,7 @@ class ReportingService {
         reportsByReason
       };
     } catch (error) {
-      console.error('Error getting report stats:', error);
+      logger.error('Error getting report stats:', error);
       return {
         totalReports: 0,
         pendingReports: 0,
@@ -264,7 +267,7 @@ class ReportingService {
 
       return data?.length || 0;
     } catch (error) {
-      console.error('Error cleaning up resolved reports:', error);
+      logger.error('Error cleaning up resolved reports:', error);
       return 0;
     }
   }

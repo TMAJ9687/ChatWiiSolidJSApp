@@ -1,6 +1,7 @@
 import { Component, createSignal, onMount, For, Show } from "solid-js";
 import { FiUpload, FiTrash2, FiStar, FiImage, FiUsers, FiEye, FiDownload, FiGrid } from "solid-icons/fi";
 import { avatarService, type Avatar, type AvatarUploadRequest } from "../../../services/supabase/avatarService";
+import { createServiceLogger } from "../../../utils/logger";
 
 interface AvatarManagerProps {
   currentUserId: string;
@@ -14,6 +15,8 @@ interface AvatarStats {
   femaleAvatars: number;
   defaultAvatars: number;
 }
+
+const logger = createServiceLogger('AvatarManager');
 
 const AvatarManager: Component<AvatarManagerProps> = (props) => {
   const [avatars, setAvatars] = createSignal<Avatar[]>([]);
@@ -42,7 +45,7 @@ const AvatarManager: Component<AvatarManagerProps> = (props) => {
       const allAvatars = await avatarService.getAvatars();
       setAvatars(allAvatars);
     } catch (error) {
-      console.error("Error loading avatars:", error);
+      logger.error("Error loading avatars:", error);
     } finally {
       setLoading(false);
     }
@@ -53,7 +56,7 @@ const AvatarManager: Component<AvatarManagerProps> = (props) => {
       const statistics = await avatarService.getAvatarStatistics();
       setStats(statistics);
     } catch (error) {
-      console.error("Error loading avatar statistics:", error);
+      logger.error("Error loading avatar statistics:", error);
     }
   };
 
@@ -99,7 +102,7 @@ const AvatarManager: Component<AvatarManagerProps> = (props) => {
         alert("Failed to upload avatars. Please check file formats and sizes.");
       }
     } catch (error) {
-      console.error("Error uploading avatars:", error);
+      logger.error("Error uploading avatars:", error);
       alert("Failed to upload avatars. Please try again.");
     } finally {
       setUploading(false);
@@ -123,7 +126,7 @@ const AvatarManager: Component<AvatarManagerProps> = (props) => {
         alert(result.message || "Failed to delete avatar");
       }
     } catch (error) {
-      console.error("Error deleting avatar:", error);
+      logger.error("Error deleting avatar:", error);
       alert("Failed to delete avatar. Please try again.");
     }
   };
@@ -140,7 +143,7 @@ const AvatarManager: Component<AvatarManagerProps> = (props) => {
         alert(result.message || "Failed to set default avatar");
       }
     } catch (error) {
-      console.error("Error setting default avatar:", error);
+      logger.error("Error setting default avatar:", error);
       alert("Failed to set default avatar. Please try again.");
     }
   };
@@ -164,7 +167,7 @@ const AvatarManager: Component<AvatarManagerProps> = (props) => {
         alert(result.message || "Failed to clear avatars");
       }
     } catch (error) {
-      console.error("Error clearing avatars:", error);
+      logger.error("Error clearing avatars:", error);
       alert("Failed to clear avatars. Please try again.");
     }
   };

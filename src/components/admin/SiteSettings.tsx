@@ -1,5 +1,6 @@
 import { Component, createSignal, onMount, For, Show } from "solid-js";
 import { FiSave, FiRefreshCw, FiTrash2, FiPlus, FiEdit2 } from "solid-icons/fi";
+import { createServiceLogger } from "../../utils/logger";
 
 interface SiteSettings {
   siteName: string;
@@ -22,6 +23,8 @@ interface SiteSettings {
 interface SiteSettingsProps {
   currentUserId: string;
 }
+
+const logger = createServiceLogger('SiteSettings');
 
 const SiteSettings: Component<SiteSettingsProps> = (props) => {
   const [settings, setSettings] = createSignal<SiteSettings>({
@@ -71,7 +74,7 @@ const SiteSettings: Component<SiteSettingsProps> = (props) => {
         setSettings(JSON.parse(savedSettings));
       }
     } catch (error) {
-      console.error("Error loading settings:", error);
+      logger.error("Error loading settings:", error);
     } finally {
       setLoading(false);
     }
@@ -85,7 +88,7 @@ const SiteSettings: Component<SiteSettingsProps> = (props) => {
       localStorage.setItem("chatwii-admin-settings", JSON.stringify(settings()));
       alert("Settings saved successfully!");
     } catch (error) {
-      console.error("Error saving settings:", error);
+      logger.error("Error saving settings:", error);
       alert("Failed to save settings. Please try again.");
     } finally {
       setSaving(false);

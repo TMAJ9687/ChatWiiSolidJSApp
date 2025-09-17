@@ -2,6 +2,9 @@ import { supabase } from "../../config/supabase";
 import type { MessageReaction, ReactionSummary } from "../../types/message.types";
 import type { Database } from "../../types/database.types";
 import type { RealtimeChannel } from "@supabase/supabase-js";
+import { createServiceLogger } from "../../utils/logger";
+
+const logger = createServiceLogger('ReactionService');
 
 type SupabaseReaction = Database['public']['Tables']['reactions']['Row'];
 type SupabaseReactionInsert = Database['public']['Tables']['reactions']['Insert'];
@@ -38,7 +41,7 @@ class ReactionService {
         throw error;
       }
     } catch (error) {
-      console.error('Error adding reaction:', error);
+      logger.error('Error adding reaction:', error);
       throw error;
     }
   }
@@ -64,7 +67,7 @@ class ReactionService {
         throw error;
       }
     } catch (error) {
-      console.error('Error removing reaction:', error);
+      logger.error('Error removing reaction:', error);
       throw error;
     }
   }
@@ -100,7 +103,7 @@ class ReactionService {
         await this.addReaction(messageId, emoji, userNickname);
       }
     } catch (error) {
-      console.error('Error toggling reaction:', error);
+      logger.error('Error toggling reaction:', error);
       throw error;
     }
   }
@@ -122,7 +125,7 @@ class ReactionService {
 
       return (data || []).map(this.convertSupabaseReaction);
     } catch (error) {
-      console.error('Error getting message reactions:', error);
+      logger.error('Error getting message reactions:', error);
       return [];
     }
   }
@@ -213,7 +216,7 @@ class ReactionService {
 
       return !!data;
     } catch (error) {
-      console.error('Error checking user reaction:', error);
+      logger.error('Error checking user reaction:', error);
       return false;
     }
   }

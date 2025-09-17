@@ -1,6 +1,9 @@
 import { createSignal, createEffect, onMount } from "solid-js";
 import { cleanupService, type CleanupStats, type CleanupResult, type CleanupLog } from "../../services/supabase/cleanupService";
 import { manualCleanupService } from "../../services/supabase/manualCleanupService";
+import { createServiceLogger } from "../../utils/logger";
+
+const logger = createServiceLogger('CleanupPanel');
 
 export function CleanupPanel() {
   const [stats, setStats] = createSignal<CleanupStats>({
@@ -33,7 +36,7 @@ export function CleanupPanel() {
       setRecentLogs(summary.recentActivity);
       setIsAutomaticActive(summary.isAutomaticActive);
     } catch (error) {
-      console.error('Error loading cleanup data:', error);
+      logger.error('Error loading cleanup data:', error);
       setMessage({ type: 'error', text: 'Failed to load cleanup data' });
     } finally {
       setIsLoading(false);

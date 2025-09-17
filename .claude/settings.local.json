@@ -89,7 +89,12 @@
       "Bash(git push:*)",
       "Bash(gh:*)",
       "Bash(winget install:*)",
-      "Bash(git remote set-url:*)"
+      "Bash(git remote set-url:*)",
+      "Bash(xargs:*)",
+      "Bash(awk:*)",
+      "Bash(npm audit:*)",
+      "Bash(git revert:*)",
+      "Bash(grep:*)"
     ],
     "deny": [],
     "ask": []

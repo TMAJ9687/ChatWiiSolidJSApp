@@ -1,5 +1,8 @@
 import { supabase } from "../../config/supabase";
 import type { AdminActionResult } from "../../types/admin.types";
+import { createServiceLogger } from "../../utils/logger";
+
+const logger = createServiceLogger('AvatarService');
 
 export interface AvatarCollection {
   standard: {
@@ -103,7 +106,7 @@ class AvatarService {
         data: this.convertToAvatar(avatarData)
       };
     } catch (error) {
-      console.error("Error uploading avatar:", error);
+      logger.error("Error uploading avatar:", error);
       return {
         success: false,
         message: error instanceof Error ? error.message : 'Failed to upload avatar'
@@ -137,7 +140,7 @@ class AvatarService {
         .remove([fileName]);
 
       if (storageError) {
-        console.warn("Error deleting file from storage:", storageError);
+        logger.warn("Error deleting file from storage:", storageError);
         // Continue with database deletion even if storage deletion fails
       }
 
@@ -157,7 +160,7 @@ class AvatarService {
         data: { avatarId, url: avatarData.url }
       };
     } catch (error) {
-      console.error("Error deleting avatar:", error);
+      logger.error("Error deleting avatar:", error);
       return {
         success: false,
         message: error instanceof Error ? error.message : 'Failed to delete avatar'
@@ -174,7 +177,7 @@ class AvatarService {
         .order("created_at", { ascending: true });
 
       if (error) {
-        console.error("Error getting avatar collection:", error);
+        logger.error("Error getting avatar collection:", error);
         return this.getEmptyCollection();
       }
 
@@ -189,7 +192,7 @@ class AvatarService {
 
       return collection;
     } catch (error) {
-      console.error("Error getting avatar collection:", error);
+      logger.error("Error getting avatar collection:", error);
       return this.getEmptyCollection();
     }
   }
@@ -216,13 +219,13 @@ class AvatarService {
       const { data, error } = await query;
 
       if (error) {
-        console.error("Error getting avatars:", error);
+        logger.error("Error getting avatars:", error);
         return [];
       }
 
       return (data || []).map(this.convertToAvatar);
     } catch (error) {
-      console.error("Error getting avatars:", error);
+      logger.error("Error getting avatars:", error);
       return [];
     }
   }
@@ -266,7 +269,7 @@ class AvatarService {
         data: { avatarId, type: avatarData.type, gender: avatarData.gender }
       };
     } catch (error) {
-      console.error("Error setting default avatar:", error);
+      logger.error("Error setting default avatar:", error);
       return {
         success: false,
         message: error instanceof Error ? error.message : 'Failed to set default avatar'
@@ -294,7 +297,7 @@ class AvatarService {
 
       return this.convertToAvatar(data);
     } catch (error) {
-      console.error("Error getting default avatar:", error);
+      logger.error("Error getting default avatar:", error);
       return null;
     }
   }
@@ -331,7 +334,7 @@ class AvatarService {
         data: { userId, avatarUrl: defaultAvatar.url }
       };
     } catch (error) {
-      console.error("Error assigning default avatar to user:", error);
+      logger.error("Error assigning default avatar to user:", error);
       return {
         success: false,
         message: error instanceof Error ? error.message : 'Failed to assign default avatar'
@@ -367,7 +370,7 @@ class AvatarService {
         defaultAvatars: defaultResult.count || 0
       };
     } catch (error) {
-      console.error("Error getting avatar statistics:", error);
+      logger.error("Error getting avatar statistics:", error);
       return {
         totalAvatars: 0,
         standardAvatars: 0,
@@ -439,7 +442,7 @@ class AvatarService {
         data: { successCount, failureCount, total: avatars.length }
       };
     } catch (error) {
-      console.error("Error clearing avatars:", error);
+      logger.error("Error clearing avatars:", error);
       return {
         success: false,
         message: error instanceof Error ? error.message : 'Failed to clear avatars'
@@ -477,7 +480,7 @@ class AvatarService {
         .eq("gender", gender)
         .neq("id", excludeId);
     } catch (error) {
-      console.error("Error unsetting other defaults:", error);
+      logger.error("Error unsetting other defaults:", error);
     }
   }
 
@@ -487,7 +490,7 @@ class AvatarService {
         .from(this.AVATAR_BUCKET)
         .remove([fileName]);
     } catch (error) {
-      console.error("Error deleting file from storage:", error);
+      logger.error("Error deleting file from storage:", error);
     }
   }
 
@@ -582,7 +585,7 @@ class AvatarService {
         data: { adminId, avatarUrl }
       };
     } catch (error) {
-      console.error("Error uploading admin avatar:", error);
+      logger.error("Error uploading admin avatar:", error);
       return {
         success: false,
         message: error instanceof Error ? error.message : 'Failed to upload admin avatar'
@@ -623,7 +626,7 @@ class AvatarService {
         data: { updatedCount: avatarIds.length }
       };
     } catch (error) {
-      console.error("Error organizing avatars:", error);
+      logger.error("Error organizing avatars:", error);
       return {
         success: false,
         message: error instanceof Error ? error.message : 'Failed to organize avatars'

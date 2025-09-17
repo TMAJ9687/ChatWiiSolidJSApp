@@ -1,4 +1,7 @@
 import { supabase } from "../../config/supabase";
+import { createServiceLogger } from "../../utils/logger";
+
+const logger = createServiceLogger('VoiceService');
 
 interface VoiceUploadResult {
   url: string;
@@ -40,7 +43,7 @@ class VoiceService {
 
       this.mediaRecorder.start(1000); // Collect data every second
     } catch (error) {
-      console.error('Error starting voice recording:', error);
+      logger.error('Error starting voice recording:', error);
       throw new Error('Failed to start recording. Please check microphone permissions.');
     }
   }
@@ -169,7 +172,7 @@ class VoiceService {
         size: audioBlob.size
       };
     } catch (error) {
-      console.error('Error uploading voice message:', error);
+      logger.error('Error uploading voice message:', error);
       throw new Error('Failed to upload voice message. Please try again.');
     }
   }
@@ -185,7 +188,7 @@ class VoiceService {
         throw error;
       }
     } catch (error) {
-      console.error('Error deleting voice message:', error);
+      logger.error('Error deleting voice message:', error);
       throw new Error('Failed to delete voice message');
     }
   }
@@ -236,7 +239,7 @@ class VoiceService {
       stream.getTracks().forEach(track => track.stop());
       return true;
     } catch (error) {
-      console.error('Microphone permission denied:', error);
+      logger.error('Microphone permission denied:', error);
       return false;
     }
   }

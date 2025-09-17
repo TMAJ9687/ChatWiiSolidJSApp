@@ -1,5 +1,8 @@
 import { createSignal } from "solid-js";
 import { supabase } from "../config/supabase";
+import { createServiceLogger } from "../utils/logger";
+
+const logger = createServiceLogger('ConnectionService');
 
 export type ConnectionStatus = 'connected' | 'reconnecting' | 'disconnected';
 
@@ -57,7 +60,7 @@ class ConnectionService {
           // Simple health check - try to get current user
           await supabase.auth.getUser();
         } catch (error: any) {
-          console.warn('Health check failed:', error);
+          logger.warn('Health check failed:', error);
           if (this.isNetworkError(error)) {
             this.handleConnectionIssue();
           }
@@ -85,7 +88,7 @@ class ConnectionService {
   // Attempt to reconnect to Supabase
   private async attemptReconnection() {
     if (this.reconnectAttempts >= this.maxReconnectAttempts) {
-      console.error('Max reconnection attempts reached. Please refresh the page.');
+      logger.error('Max reconnection attempts reached. Please refresh the page.');
       this.setConnectionStatus('disconnected');
       return;
     }
@@ -102,7 +105,7 @@ class ConnectionService {
       this.reconnectAttempts = 0;
       return;
     } catch (error) {
-      console.warn('Reconnection failed:', error);
+      logger.warn('Reconnection failed:', error);
     }
 
     // Schedule next retry with exponential backoff
@@ -152,7 +155,7 @@ class ConnectionService {
 
         // Check if it's a network-related error
         if (this.isNetworkError(error)) {
-          console.warn(`Network error detected, attempt ${i + 1}/${maxRetries + 1}:`, error.message);
+          logger.warn(`Network error detected, attempt ${i + 1}/${maxRetries + 1}:`, error.message);
           
           if (i < maxRetries) {
             // Wait before retry with exponential backoff

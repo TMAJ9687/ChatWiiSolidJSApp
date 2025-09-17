@@ -1,5 +1,8 @@
 import { supabase } from "../../config/supabase";
 import type { Database } from "../../types/database.types";
+import { createServiceLogger } from "../../utils/logger";
+
+const logger = createServiceLogger('ConversationService');
 
 interface ConversationStats {
   totalMessages: number;
@@ -76,7 +79,7 @@ class ConversationService {
       return Array.from(conversationMap.values())
         .sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime());
     } catch (error) {
-      console.error('Error getting user conversations:', error);
+      logger.error('Error getting user conversations:', error);
       return [];
     }
   }
@@ -112,7 +115,7 @@ class ConversationService {
 
       return stats;
     } catch (error) {
-      console.error('Error getting conversation stats:', error);
+      logger.error('Error getting conversation stats:', error);
       return {
         totalMessages: 0,
         textMessages: 0,
@@ -159,7 +162,7 @@ class ConversationService {
         .in("message_id", messageIds);
 
       if (reactionsError) {
-        console.error("Error deleting reactions:", reactionsError);
+        logger.error("Error deleting reactions:", reactionsError);
         // Continue even if reactions deletion fails
       }
 
@@ -176,7 +179,7 @@ class ConversationService {
       // Conversation cleared successfully
       return true;
     } catch (error) {
-      console.error('Error clearing conversation:', error);
+      logger.error('Error clearing conversation:', error);
       throw error;
     }
   }
@@ -217,7 +220,7 @@ class ConversationService {
         .in("message_id", messageIds);
 
       if (reactionsError) {
-        console.error("Error deleting reactions:", reactionsError);
+        logger.error("Error deleting reactions:", reactionsError);
         // Continue even if reactions deletion fails
       }
 
@@ -235,7 +238,7 @@ class ConversationService {
       // My messages cleared successfully
       return true;
     } catch (error) {
-      console.error('Error clearing my messages:', error);
+      logger.error('Error clearing my messages:', error);
       throw error;
     }
   }
@@ -278,7 +281,7 @@ class ConversationService {
       const lastClearKey = `last-conversation-clear-${userId}`;
       localStorage.setItem(lastClearKey, Date.now().toString());
     } catch (error) {
-      console.warn('Could not record conversation clear:', error);
+      logger.warn('Could not record conversation clear:', error);
     }
   }
 
@@ -365,7 +368,7 @@ class ConversationService {
 
       return data || [];
     } catch (error) {
-      console.error('Error exporting conversation:', error);
+      logger.error('Error exporting conversation:', error);
       return [];
     }
   }

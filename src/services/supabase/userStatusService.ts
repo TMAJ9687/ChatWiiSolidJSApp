@@ -1,5 +1,8 @@
 import { supabase } from "../../config/supabase";
 import type { User } from "../../types/user.types";
+import { createServiceLogger } from "../../utils/logger";
+
+const logger = createServiceLogger('UserStatusService');
 
 export interface UserStatusUpdate {
   userId: string;
@@ -39,10 +42,10 @@ class UserStatusService {
         });
 
       if (error) {
-        console.error("Error broadcasting user status update:", error);
+        logger.error("Error broadcasting user status update:", error);
       }
     } catch (error) {
-      console.error("Error broadcasting user status update:", error);
+      logger.error("Error broadcasting user status update:", error);
     }
   }
 
@@ -58,10 +61,10 @@ class UserStatusService {
         });
 
       if (error) {
-        console.error("Error broadcasting presence update:", error);
+        logger.error("Error broadcasting presence update:", error);
       }
     } catch (error) {
-      console.error("Error broadcasting presence update:", error);
+      logger.error("Error broadcasting presence update:", error);
     }
   }
 
@@ -258,7 +261,7 @@ class UserStatusService {
       });
 
     } catch (error) {
-      console.error("Error updating user status:", error);
+      logger.error("Error updating user status:", error);
       throw error;
     }
   }
@@ -300,7 +303,7 @@ class UserStatusService {
         timestamp: data.updated_at || new Date().toISOString()
       };
     } catch (error) {
-      console.error("Error getting user status:", error);
+      logger.error("Error getting user status:", error);
       return null;
     }
   }
@@ -341,7 +344,7 @@ class UserStatusService {
         timestamp: user.updated_at || new Date().toISOString()
       }));
     } catch (error) {
-      console.error("Error getting all users status:", error);
+      logger.error("Error getting all users status:", error);
       return [];
     }
   }
@@ -353,7 +356,7 @@ class UserStatusService {
       try {
         unsubscribe();
       } catch (error) {
-        console.error("Error cleaning up status subscription:", error);
+        logger.error("Error cleaning up status subscription:", error);
       }
     });
     this.statusSubscriptions.clear();
@@ -363,7 +366,7 @@ class UserStatusService {
       try {
         unsubscribe();
       } catch (error) {
-        console.error("Error cleaning up presence subscription:", error);
+        logger.error("Error cleaning up presence subscription:", error);
       }
     });
     this.presenceSubscriptions.clear();
@@ -375,10 +378,10 @@ class UserStatusService {
   private reconnectDelay = 1000; // Start with 1 second
 
   async handleConnectionLoss(): Promise<void> {
-    console.log("Connection lost, attempting to reconnect...");
+    logger.debug("Connection lost, attempting to reconnect...");
     
     if (this.reconnectAttempts >= this.maxReconnectAttempts) {
-      console.error("Max reconnection attempts reached");
+      logger.error("Max reconnection attempts reached");
       return;
     }
 
@@ -395,7 +398,7 @@ class UserStatusService {
         .limit(1);
 
       if (!error) {
-        console.log("Connection restored");
+        logger.debug("Connection restored");
         this.reconnectAttempts = 0;
         this.reconnectDelay = 1000; // Reset delay
       } else {
@@ -404,7 +407,7 @@ class UserStatusService {
         await this.handleConnectionLoss();
       }
     } catch (error) {
-      console.error("Reconnection failed:", error);
+      logger.error("Reconnection failed:", error);
       this.reconnectDelay = Math.min(this.reconnectDelay * 2, 30000);
       await this.handleConnectionLoss();
     }
@@ -418,7 +421,7 @@ class UserStatusService {
         if (payload.status === 'CLOSED') {
           this.handleConnectionLoss();
         } else if (payload.status === 'CHANNEL_ERROR') {
-          console.error("Channel error:", payload);
+          logger.error("Channel error:", payload);
           this.handleConnectionLoss();
         }
       })

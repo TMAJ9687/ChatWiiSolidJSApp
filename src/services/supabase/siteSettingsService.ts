@@ -1,5 +1,8 @@
 import { supabase } from "../../config/supabase";
 import type { AdminActionResult } from "../../types/admin.types";
+import { createServiceLogger } from "../../utils/logger";
+
+const logger = createServiceLogger('SiteSettingsService');
 
 export interface SiteSettings {
   adsenseLinks: string[]; // 3 AdSense links
@@ -44,13 +47,13 @@ class SiteSettingsService {
         .single();
 
       if (error) {
-        console.warn(`Setting '${key}' not found, returning default`);
+        logger.warn(`Setting '${key}' not found, returning default`);
         return this.getDefaultValue(key);
       }
 
       return this.parseValue(data.value, data.type);
     } catch (error) {
-      console.error(`Error getting setting '${key}':`, error);
+      logger.error(`Error getting setting '${key}':`, error);
       return this.getDefaultValue(key);
     }
   }
@@ -90,7 +93,7 @@ class SiteSettingsService {
         data: { key, value }
       };
     } catch (error) {
-      console.error(`Error updating setting '${key}':`, error);
+      logger.error(`Error updating setting '${key}':`, error);
       return {
         success: false,
         message: error instanceof Error ? error.message : 'Failed to update setting'
@@ -106,7 +109,7 @@ class SiteSettingsService {
         .select("*");
 
       if (error) {
-        console.error("Error getting all settings:", error);
+        logger.error("Error getting all settings:", error);
         return this.defaultSettings;
       }
 
@@ -121,7 +124,7 @@ class SiteSettingsService {
 
       return settings;
     } catch (error) {
-      console.error("Error getting all settings:", error);
+      logger.error("Error getting all settings:", error);
       return this.defaultSettings;
     }
   }
@@ -161,7 +164,7 @@ class SiteSettingsService {
         data: updates
       };
     } catch (error) {
-      console.error("Error updating multiple settings:", error);
+      logger.error("Error updating multiple settings:", error);
       return {
         success: false,
         message: error instanceof Error ? error.message : 'Failed to update settings'
@@ -200,7 +203,7 @@ class SiteSettingsService {
       
       return result;
     } catch (error) {
-      console.error("Error toggling maintenance mode:", error);
+      logger.error("Error toggling maintenance mode:", error);
       return {
         success: false,
         message: 'Failed to toggle maintenance mode'
@@ -253,7 +256,7 @@ class SiteSettingsService {
 
       return await this.updateSetting('vipPrices', updatedPrices, adminId);
     } catch (error) {
-      console.error("Error updating VIP prices:", error);
+      logger.error("Error updating VIP prices:", error);
       return {
         success: false,
         message: 'Failed to update VIP prices'
@@ -287,7 +290,7 @@ class SiteSettingsService {
         data: { key, value: defaultValue }
       };
     } catch (error) {
-      console.error(`Error deleting setting '${key}':`, error);
+      logger.error(`Error deleting setting '${key}':`, error);
       return {
         success: false,
         message: error instanceof Error ? error.message : 'Failed to delete setting'
@@ -305,7 +308,7 @@ class SiteSettingsService {
         .limit(limit);
 
       if (error) {
-        console.error("Error getting settings history:", error);
+        logger.error("Error getting settings history:", error);
         return [];
       }
 
@@ -318,7 +321,7 @@ class SiteSettingsService {
         updatedAt: row.updated_at
       }));
     } catch (error) {
-      console.error("Error getting settings history:", error);
+      logger.error("Error getting settings history:", error);
       return [];
     }
   }
@@ -338,7 +341,7 @@ class SiteSettingsService {
         data: backup
       };
     } catch (error) {
-      console.error("Error creating settings backup:", error);
+      logger.error("Error creating settings backup:", error);
       return {
         success: false,
         message: 'Failed to create settings backup'
@@ -355,7 +358,7 @@ class SiteSettingsService {
       const flatSettings = this.flattenSettings(backup.settings);
       return await this.updateMultipleSettings(flatSettings, adminId);
     } catch (error) {
-      console.error("Error restoring settings:", error);
+      logger.error("Error restoring settings:", error);
       return {
         success: false,
         message: 'Failed to restore settings'
@@ -468,7 +471,7 @@ class SiteSettingsService {
           payload: { key, value }
         });
     } catch (error) {
-      console.error("Error broadcasting setting change:", error);
+      logger.error("Error broadcasting setting change:", error);
     }
   }
 }

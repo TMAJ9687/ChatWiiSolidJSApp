@@ -1,6 +1,9 @@
 import { supabase } from "../../config/supabase";
 import type { AdminActionResult } from "../../types/admin.types";
 import type { User } from "../../types/user.types";
+import { createServiceLogger } from "../../utils/logger";
+
+const logger = createServiceLogger('BotService');
 
 export interface Bot {
   id: string;
@@ -117,7 +120,7 @@ class BotService {
         data: bot
       };
     } catch (error) {
-      console.error("Error creating bot:", error);
+      logger.error("Error creating bot:", error);
       return {
         success: false,
         message: error instanceof Error ? error.message : 'Failed to create bot'
@@ -160,7 +163,7 @@ class BotService {
       const { data, count, error } = await query;
 
       if (error) {
-        console.error("Error getting bots:", error);
+        logger.error("Error getting bots:", error);
         return { bots: [], total: 0 };
       }
 
@@ -170,7 +173,7 @@ class BotService {
 
       return { bots, total: count || 0 };
     } catch (error) {
-      console.error("Error getting bots:", error);
+      logger.error("Error getting bots:", error);
       return { bots: [], total: 0 };
     }
   }
@@ -202,7 +205,7 @@ class BotService {
 
       return await this.convertToBot(data);
     } catch (error) {
-      console.error("Error getting bot:", error);
+      logger.error("Error getting bot:", error);
       return null;
     }
   }
@@ -270,7 +273,7 @@ class BotService {
         data: updatedBot
       };
     } catch (error) {
-      console.error("Error updating bot:", error);
+      logger.error("Error updating bot:", error);
       return {
         success: false,
         message: error instanceof Error ? error.message : 'Failed to update bot'
@@ -335,7 +338,7 @@ class BotService {
         data: { botId, isActive: newStatus }
       };
     } catch (error) {
-      console.error("Error toggling bot status:", error);
+      logger.error("Error toggling bot status:", error);
       return {
         success: false,
         message: error instanceof Error ? error.message : 'Failed to toggle bot status'
@@ -373,7 +376,7 @@ class BotService {
         data: { botId, userId: bot.userId }
       };
     } catch (error) {
-      console.error("Error deleting bot:", error);
+      logger.error("Error deleting bot:", error);
       return {
         success: false,
         message: error instanceof Error ? error.message : 'Failed to delete bot'
@@ -433,7 +436,7 @@ class BotService {
         botsByActivityLevel
       };
     } catch (error) {
-      console.error("Error getting bot statistics:", error);
+      logger.error("Error getting bot statistics:", error);
       return {
         totalBots: 0,
         activeBots: 0,
@@ -481,7 +484,7 @@ class BotService {
         .eq("is_active", true);
 
       if (error) {
-        console.error("Error getting bots by activity level:", error);
+        logger.error("Error getting bots by activity level:", error);
         return [];
       }
 
@@ -489,7 +492,7 @@ class BotService {
         (data || []).map(row => this.convertToBot(row))
       );
     } catch (error) {
-      console.error("Error getting bots by activity level:", error);
+      logger.error("Error getting bots by activity level:", error);
       return [];
     }
   }
@@ -533,7 +536,7 @@ class BotService {
 
       return !error && data && data.length > 0;
     } catch (error) {
-      console.error("Error checking nickname existence:", error);
+      logger.error("Error checking nickname existence:", error);
       return false;
     }
   }
@@ -566,7 +569,7 @@ class BotService {
         data: data
       };
     } catch (error) {
-      console.error("Error creating bot user:", error);
+      logger.error("Error creating bot user:", error);
       return {
         success: false,
         message: error instanceof Error ? error.message : 'Failed to create bot user'
@@ -587,7 +590,7 @@ class BotService {
       // Delete user
       await supabase.from("users").delete().eq("id", userId);
     } catch (error) {
-      console.error("Error deleting user:", error);
+      logger.error("Error deleting user:", error);
     }
   }
 
@@ -626,7 +629,7 @@ class BotService {
         message: 'All bots activated successfully'
       };
     } catch (error) {
-      console.error("Error activating all bots:", error);
+      logger.error("Error activating all bots:", error);
       return {
         success: false,
         message: error instanceof Error ? error.message : 'Failed to activate all bots'
@@ -650,7 +653,7 @@ class BotService {
         message: 'All bots deactivated successfully'
       };
     } catch (error) {
-      console.error("Error deactivating all bots:", error);
+      logger.error("Error deactivating all bots:", error);
       return {
         success: false,
         message: error instanceof Error ? error.message : 'Failed to deactivate all bots'

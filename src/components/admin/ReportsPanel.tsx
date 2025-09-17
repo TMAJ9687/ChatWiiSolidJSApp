@@ -2,6 +2,7 @@ import { Component, createSignal, onMount, For, Show } from "solid-js";
 import { FiSearch, FiFilter, FiEye, FiCheck, FiX, FiClock } from "solid-icons/fi";
 import { adminService } from "../../services/supabase/adminService";
 import type { User } from "../../types/user.types";
+import { createServiceLogger } from "../../utils/logger";
 
 interface ReportWithUsers {
   id: string;
@@ -19,6 +20,8 @@ interface ReportWithUsers {
 interface ReportsPanelProps {
   currentUserId: string;
 }
+
+const logger = createServiceLogger('ReportsPanel');
 
 const ReportsPanel: Component<ReportsPanelProps> = (props) => {
   const [reports, setReports] = createSignal<ReportWithUsers[]>([]);
@@ -48,7 +51,7 @@ const ReportsPanel: Component<ReportsPanelProps> = (props) => {
       setReports(result.reports);
       setTotal(result.total);
     } catch (error) {
-      console.error("Error loading reports:", error);
+      logger.error("Error loading reports:", error);
     } finally {
       setLoading(false);
     }
@@ -78,7 +81,7 @@ const ReportsPanel: Component<ReportsPanelProps> = (props) => {
       await loadReports();
       setShowReportModal(false);
     } catch (error) {
-      console.error(`Error updating report status:`, error);
+      logger.error(`Error updating report status:`, error);
       alert(`Failed to update report status. Please try again.`);
     } finally {
       setActionLoading(null);

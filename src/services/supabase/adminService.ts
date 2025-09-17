@@ -2,15 +2,18 @@ import { supabase } from "../../config/supabase";
 import type { User } from "../../types/user.types";
 import type { Database } from "../../types/database.types";
 import type { Feedback } from "../../types/admin.types";
-import type { 
-  AdminAuditLog, 
-  AdminActionResult, 
-  UserAction, 
-  AdminStats, 
-  UserSearchFilters, 
+import type {
+  AdminAuditLog,
+  AdminActionResult,
+  UserAction,
+  AdminStats,
+  UserSearchFilters,
   ReportWithUsers,
-  AdminRetryConfig 
+  AdminRetryConfig
 } from "../../types/admin.types";
+import { createServiceLogger } from "../../utils/logger";
+
+const logger = createServiceLogger('AdminService');
 
 type SupabaseUser = Database['public']['Tables']['users']['Row'];
 type SupabaseReport = Database['public']['Tables']['reports']['Row'];
@@ -47,11 +50,11 @@ class AdminService {
         });
 
       if (error) {
-        console.error("Error logging admin action:", error);
+        logger.error("Error logging admin action:", error);
         // Don't throw error for audit logging failures to avoid blocking main operations
       }
     } catch (error) {
-      console.error("Error logging admin action:", error);
+      logger.error("Error logging admin action:", error);
     }
   }
 
@@ -69,7 +72,7 @@ class AdminService {
         lastError = error as Error;
         
         if (attempt === this.retryConfig.maxRetries) {
-          console.error(`Operation ${operationName} failed after ${this.retryConfig.maxRetries} retries:`, error);
+          logger.error(`Operation ${operationName} failed after ${this.retryConfig.maxRetries} retries:`, error);
           throw error;
         }
         
@@ -78,7 +81,7 @@ class AdminService {
           this.retryConfig.maxDelay
         );
         
-        console.warn(`Operation ${operationName} failed (attempt ${attempt + 1}), retrying in ${delay}ms:`, error);
+        logger.warn(`Operation ${operationName} failed (attempt ${attempt + 1}), retrying in ${delay}ms:`, error);
         await new Promise(resolve => setTimeout(resolve, delay));
       }
     }
@@ -117,7 +120,7 @@ class AdminService {
       const { data, count, error } = await query;
 
       if (error) {
-        console.error("Error getting audit logs:", error);
+        logger.error("Error getting audit logs:", error);
         return { logs: [], total: 0 };
       }
 
@@ -133,7 +136,7 @@ class AdminService {
 
       return { logs, total: count || 0 };
     } catch (error) {
-      console.error("Error getting audit logs:", error);
+      logger.error("Error getting audit logs:", error);
       return { logs: [], total: 0 };
     }
   }
@@ -191,7 +194,7 @@ class AdminService {
         return result;
       }, `performUserAction-${action.type}`);
     } catch (error) {
-      console.error(`Error performing user action ${action.type}:`, error);
+      logger.error(`Error performing user action ${action.type}:`, error);
       return { 
         success: false, 
         message: error instanceof Error ? error.message : 'Unknown error occurred' 
@@ -209,13 +212,13 @@ class AdminService {
         .single();
 
       if (error) {
-        console.error("Error checking admin status:", error);
+        logger.error("Error checking admin status:", error);
         return false;
       }
 
       return data?.role === "admin";
     } catch (error) {
-      console.error("Error checking admin status:", error);
+      logger.error("Error checking admin status:", error);
       return false;
     }
   }
@@ -257,7 +260,7 @@ class AdminService {
         unreadFeedback: unreadFeedbackResult.count || 0,
       };
     } catch (error) {
-      console.error("Error getting admin stats:", error);
+      logger.error("Error getting admin stats:", error);
       return {
         totalUsers: 0,
         activeUsers: 0,
@@ -316,7 +319,7 @@ class AdminService {
       const { data, count, error } = await query;
 
       if (error) {
-        console.error("Error getting users:", error);
+        logger.error("Error getting users:", error);
         return { users: [], total: 0 };
       }
 
@@ -325,7 +328,7 @@ class AdminService {
         .map(this.convertSupabaseUser);
       return { users, total: count || 0 };
     } catch (error) {
-      console.error("Error getting users:", error);
+      logger.error("Error getting users:", error);
       return { users: [], total: 0 };
     }
   }
@@ -367,7 +370,7 @@ class AdminService {
         }
       }, 'updateUserStatus');
     } catch (error) {
-      console.error("Error updating user status:", error);
+      logger.error("Error updating user status:", error);
       throw error;
     }
   }
@@ -398,7 +401,7 @@ class AdminService {
         }
       }, 'updateUserRole');
     } catch (error) {
-      console.error("Error updating user role:", error);
+      logger.error("Error updating user role:", error);
       throw error;
     }
   }
@@ -429,13 +432,13 @@ class AdminService {
       const { data, count, error } = await query;
 
       if (error) {
-        console.error("Error getting reports:", error);
+        logger.error("Error getting reports:", error);
         return { reports: [], total: 0 };
       }
 
       return { reports: data || [], total: count || 0 };
     } catch (error) {
-      console.error("Error getting reports:", error);
+      logger.error("Error getting reports:", error);
       return { reports: [], total: 0 };
     }
   }
@@ -480,7 +483,7 @@ class AdminService {
         }
       }, 'updateReportStatus');
     } catch (error) {
-      console.error("Error updating report status:", error);
+      logger.error("Error updating report status:", error);
       throw error;
     }
   }
@@ -536,7 +539,7 @@ class AdminService {
         }
       }, 'deleteUser');
     } catch (error) {
-      console.error("Error deleting user:", error);
+      logger.error("Error deleting user:", error);
       throw error;
     }
   }
@@ -569,7 +572,7 @@ class AdminService {
         lastSeen: userResult.data?.last_seen || null,
       };
     } catch (error) {
-      console.error("Error getting user activity:", error);
+      logger.error("Error getting user activity:", error);
       return {
         messageCount: 0,
         reportsReceived: 0,
@@ -629,7 +632,7 @@ class AdminService {
       const { data, count, error } = await query;
 
       if (error) {
-        console.error("Error getting feedback:", error);
+        logger.error("Error getting feedback:", error);
         return { feedback: [], total: 0 };
       }
 
@@ -642,7 +645,7 @@ class AdminService {
 
       return { feedback: mappedFeedback, total: count || 0 };
     } catch (error) {
-      console.error("Error getting feedback:", error);
+      logger.error("Error getting feedback:", error);
       return { feedback: [], total: 0 };
     }
   }
@@ -683,7 +686,7 @@ class AdminService {
         }
       }, 'updateFeedbackStatus');
     } catch (error) {
-      console.error("Error updating feedback status:", error);
+      logger.error("Error updating feedback status:", error);
       throw error;
     }
   }
@@ -724,7 +727,7 @@ class AdminService {
         }
       }, 'deleteFeedback');
     } catch (error) {
-      console.error("Error deleting feedback:", error);
+      logger.error("Error deleting feedback:", error);
       throw error;
     }
   }

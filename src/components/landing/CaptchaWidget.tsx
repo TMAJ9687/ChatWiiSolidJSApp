@@ -1,5 +1,6 @@
 import { Component, createSignal, onMount, onCleanup } from "solid-js";
 import { turnstileService } from "../../services/captcha/turnstileService";
+import { createServiceLogger } from "../../utils/logger";
 
 interface CaptchaWidgetProps {
   onVerify: (token: string) => void;
@@ -7,6 +8,8 @@ interface CaptchaWidgetProps {
   onError: () => void;
   theme?: 'light' | 'dark';
 }
+
+const logger = createServiceLogger('CaptchaWidget');
 
 const CaptchaWidget: Component<CaptchaWidgetProps> = (props) => {
   const [isLoaded, setIsLoaded] = createSignal(false);
@@ -22,7 +25,7 @@ const CaptchaWidget: Component<CaptchaWidgetProps> = (props) => {
     
     // Skip CAPTCHA in localhost development only
     if (isLocalhost) {
-      console.log('Turnstile: Bypassed for localhost development');
+      logger.debug('Turnstile: Bypassed for localhost development');
       // Auto-verify with bypass token for development
       setTimeout(() => {
         props.onVerify('turnstile-bypass-dev-' + Date.now());

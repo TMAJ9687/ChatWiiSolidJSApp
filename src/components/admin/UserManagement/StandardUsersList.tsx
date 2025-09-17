@@ -5,6 +5,7 @@ import { kickService } from '../../../services/supabase/kickService';
 import { banService } from '../../../services/supabase/banService';
 import { supabase } from '../../../config/supabase';
 import { UserActionModal } from './UserActionModal';
+import { createServiceLogger } from '../../../utils/logger';
 
 interface StandardUsersListProps {
   onlineOnly: boolean; // Always true for standard users per requirements
@@ -16,6 +17,8 @@ interface StandardUserActions {
   edit: (userId: string) => void;
   upgradeToVip: (userId: string, duration: number) => Promise<void>;
 }
+
+const logger = createServiceLogger('StandardUsersList');
 
 export const StandardUsersList: React.FC<StandardUsersListProps> = ({ onlineOnly }) => {
   const [users, setUsers] = useState<User[]>([]);
@@ -45,7 +48,7 @@ export const StandardUsersList: React.FC<StandardUsersListProps> = ({ onlineOnly
       const { users: standardUsers } = await adminService.getUsers(filters, 1, 200);
       setUsers(standardUsers);
     } catch (err) {
-      console.error('Error loading standard users:', err);
+      logger.error('Error loading standard users:', err);
       setError('Failed to load standard users');
     } finally {
       setLoading(false);
@@ -60,7 +63,7 @@ export const StandardUsersList: React.FC<StandardUsersListProps> = ({ onlineOnly
         setCurrentAdminId(user.id);
       }
     } catch (err) {
-      console.error('Error getting current admin ID:', err);
+      logger.error('Error getting current admin ID:', err);
     }
   };
 
@@ -124,7 +127,7 @@ export const StandardUsersList: React.FC<StandardUsersListProps> = ({ onlineOnly
         await kickService.kickUser(userId, currentAdminId, reason);
         await loadStandardUsers(); // Refresh the list
       } catch (err) {
-        console.error('Error kicking user:', err);
+        logger.error('Error kicking user:', err);
         throw err;
       }
     },
@@ -134,14 +137,14 @@ export const StandardUsersList: React.FC<StandardUsersListProps> = ({ onlineOnly
         await banService.banUser(userId, currentAdminId, reason, duration);
         await loadStandardUsers(); // Refresh the list
       } catch (err) {
-        console.error('Error banning user:', err);
+        logger.error('Error banning user:', err);
         throw err;
       }
     },
 
     edit: (userId: string) => {
       // TODO: Implement edit user functionality
-      console.log('Edit user:', userId);
+      logger.debug('Edit user:', userId);
     },
 
     upgradeToVip: async (userId: string, duration: number) => {
@@ -149,7 +152,7 @@ export const StandardUsersList: React.FC<StandardUsersListProps> = ({ onlineOnly
         await adminService.updateUserRole(userId, 'vip', currentAdminId, duration);
         await loadStandardUsers(); // Refresh the list
       } catch (err) {
-        console.error('Error upgrading user to VIP:', err);
+        logger.error('Error upgrading user to VIP:', err);
         throw err;
       }
     }
@@ -179,7 +182,7 @@ export const StandardUsersList: React.FC<StandardUsersListProps> = ({ onlineOnly
           break;
       }
     } catch (err) {
-      console.error(`Error performing ${actionType} action:`, err);
+      logger.error(`Error performing ${actionType} action:`, err);
       throw err;
     } finally {
       setSelectedUser(null);

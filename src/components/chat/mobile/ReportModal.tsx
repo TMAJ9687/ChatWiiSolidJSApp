@@ -1,6 +1,9 @@
 import { Component, Show, createSignal } from 'solid-js';
 import { FiX, FiFlag } from 'solid-icons/fi';
 import { reportingService, type ReportReason } from '../../../services/supabase/reportingService';
+import { createServiceLogger } from '../../../utils/logger';
+
+const logger = createServiceLogger('ReportModal');
 
 interface ReportModalProps {
   isOpen: boolean;
@@ -101,7 +104,7 @@ const ReportModal: Component<ReportModalProps> = (props) => {
         handleClose();
       }, 2000);
     } catch (error: any) {
-      console.error('Error submitting report:', error);
+      logger.error('Error submitting report:', error);
       
       // Provide friendly error messages
       let friendlyMessage = 'Failed to submit report. Please try again.';

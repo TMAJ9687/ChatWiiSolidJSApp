@@ -3,6 +3,7 @@ import { supabase } from '../../../config/supabase';
 import { authService } from '../../../services/supabase/authService';
 import { adminService } from '../../../services/supabase/adminService';
 import type { User } from '../../../types/user.types';
+import { createServiceLogger } from '../../../utils/logger';
 
 interface AdminProfileProps {
   currentUser: User;
@@ -19,6 +20,8 @@ interface PasswordChangeData {
   newPassword: string;
   confirmPassword: string;
 }
+
+const logger = createServiceLogger('AdminProfile');
 
 export const AdminProfile: Component<AdminProfileProps> = (props) => {
   const [profileData, setProfileData] = createSignal<AdminProfileData>({
@@ -93,7 +96,7 @@ export const AdminProfile: Component<AdminProfileProps> = (props) => {
 
       setMessage({ type: 'success', text: 'Profile updated successfully!' });
     } catch (error) {
-      console.error('Error updating profile:', error);
+      logger.error('Error updating profile:', error);
       setMessage({ 
         type: 'error', 
         text: error instanceof Error ? error.message : 'Failed to update profile' 
@@ -152,7 +155,7 @@ export const AdminProfile: Component<AdminProfileProps> = (props) => {
 
       setMessage({ type: 'success', text: 'Avatar uploaded successfully!' });
     } catch (error) {
-      console.error('Error uploading avatar:', error);
+      logger.error('Error uploading avatar:', error);
       setMessage({ 
         type: 'error', 
         text: error instanceof Error ? error.message : 'Failed to upload avatar' 
@@ -212,7 +215,7 @@ export const AdminProfile: Component<AdminProfileProps> = (props) => {
 
       setPasswordMessage({ type: 'success', text: 'Password changed successfully!' });
     } catch (error) {
-      console.error('Error changing password:', error);
+      logger.error('Error changing password:', error);
       setPasswordMessage({ 
         type: 'error', 
         text: error instanceof Error ? error.message : 'Failed to change password' 

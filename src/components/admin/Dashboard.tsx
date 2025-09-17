@@ -1,6 +1,9 @@
 import { Component, createSignal, onMount, onCleanup } from "solid-js";
 import { FiUsers, FiActivity, FiFlag, FiTrendingUp, FiMessageSquare } from "solid-icons/fi";
 import { adminService } from "../../services/supabase/adminService";
+import { createServiceLogger } from "../../utils/logger";
+
+const logger = createServiceLogger('Dashboard');
 
 interface DashboardProps {
   currentUserId: string;
@@ -82,7 +85,7 @@ const Dashboard: Component<DashboardProps> = (props) => {
       const adminStats = await adminService.getAdminStats();
       setStats(adminStats);
     } catch (error) {
-      console.error("Error loading dashboard stats:", error);
+      logger.error("Error loading dashboard stats:", error);
     } finally {
       setLoading(false);
     }

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { banService } from '../../../services/supabase/banService';
 import { adminService } from '../../../services/supabase/adminService';
 import type { AdminActionResult } from '../../../types/admin.types';
+import { createServiceLogger } from '../../../utils/logger';
 
 interface BanModalProps {
   isOpen: boolean;
@@ -48,6 +49,8 @@ const DURATION_PRESETS = [
   { label: '6 Months', hours: 4320 },
   { label: '1 Year', hours: 8760 }
 ];
+
+const logger = createServiceLogger('BanModal');
 
 export const BanModal: React.FC<BanModalProps> = ({
   isOpen,
@@ -110,7 +113,7 @@ export const BanModal: React.FC<BanModalProps> = ({
         setExistingBanCheck(null);
       }
     } catch (err) {
-      console.warn('Failed to check existing user ban:', err);
+      logger.warn('Failed to check existing user ban:', err);
     }
   };
 
@@ -123,7 +126,7 @@ export const BanModal: React.FC<BanModalProps> = ({
         setExistingBanCheck(null);
       }
     } catch (err) {
-      console.warn('Failed to check existing IP ban:', err);
+      logger.warn('Failed to check existing IP ban:', err);
     }
   };
 
@@ -140,7 +143,7 @@ export const BanModal: React.FC<BanModalProps> = ({
       const results = await adminService.searchUsers({ search: query });
       setUserSearchResults(results || []);
     } catch (err) {
-      console.error('Error searching users:', err);
+      logger.error('Error searching users:', err);
       setUserSearchResults([]);
     } finally {
       setUserSearchLoading(false);
@@ -279,7 +282,7 @@ export const BanModal: React.FC<BanModalProps> = ({
         setError(result.message || 'Failed to create ban');
       }
     } catch (err) {
-      console.error('Error creating ban:', err);
+      logger.error('Error creating ban:', err);
       setError(err instanceof Error ? err.message : 'Failed to create ban');
     } finally {
       setLoading(false);

@@ -1,5 +1,8 @@
 import { supabase } from "../../config/supabase";
 import type { Database } from "../../types/database.types";
+import { createServiceLogger } from "../../utils/logger";
+
+const logger = createServiceLogger('BlockingServiceWorkaround');
 
 type SupabaseBlock = Database['public']['Tables']['blocks']['Row'];
 type SupabaseBlockInsert = Database['public']['Tables']['blocks']['Insert'];
@@ -60,7 +63,7 @@ class BlockingServiceWorkaround {
       this.invalidateCache();
       
     } catch (error) {
-      console.error('Error blocking user:', error);
+      logger.error('Error blocking user:', error);
       throw error;
     }
   }
@@ -99,7 +102,7 @@ class BlockingServiceWorkaround {
       this.invalidateCache();
 
     } catch (error) {
-      console.error('Error unblocking user:', error);
+      logger.error('Error unblocking user:', error);
       throw error;
     }
   }
@@ -188,7 +191,7 @@ class BlockingServiceWorkaround {
         data.forEach(block => this.blockedUsersCache.add(block.blocked_id));
       }
     } catch (error) {
-      console.warn('Could not refresh blocked users cache, using existing cache');
+      logger.warn('Could not refresh blocked users cache, using existing cache');
     }
 
     this.cacheExpiry = Date.now() + this.CACHE_DURATION;
@@ -212,7 +215,7 @@ class BlockingServiceWorkaround {
         data.forEach(block => this.usersWhoBlockedMeCache.add(block.blocker_id));
       }
     } catch (error) {
-      console.warn('Could not refresh users who blocked me cache, using existing cache');
+      logger.warn('Could not refresh users who blocked me cache, using existing cache');
     }
   }
 

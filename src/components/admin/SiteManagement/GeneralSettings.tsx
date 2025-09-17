@@ -1,6 +1,7 @@
 import { Component, createSignal, onMount, Show } from "solid-js";
 import { FiSave, FiRefreshCw, FiAlertTriangle, FiDownload, FiUpload } from "solid-icons/fi";
 import { siteSettingsService } from "../../../services/supabase/siteSettingsService";
+import { createServiceLogger } from "../../../utils/logger";
 
 interface GeneralSettingsData {
   adsenseLink1: string;
@@ -13,6 +14,8 @@ interface GeneralSettingsData {
 interface GeneralSettingsProps {
   currentUserId: string;
 }
+
+const logger = createServiceLogger('GeneralSettings');
 
 const GeneralSettings: Component<GeneralSettingsProps> = (props) => {
   const [settings, setSettings] = createSignal<GeneralSettingsData>({
@@ -55,7 +58,7 @@ const GeneralSettings: Component<GeneralSettingsProps> = (props) => {
       const backup = await siteSettingsService.getSetting("last_settings_backup");
       setLastBackup(backup);
     } catch (error) {
-      console.error("Error loading general settings:", error);
+      logger.error("Error loading general settings:", error);
     } finally {
       setLoading(false);
     }
@@ -110,7 +113,7 @@ const GeneralSettings: Component<GeneralSettingsProps> = (props) => {
 
       alert("General settings saved successfully! Changes will be reflected on the site immediately.");
     } catch (error) {
-      console.error("Error saving general settings:", error);
+      logger.error("Error saving general settings:", error);
       alert("Failed to save settings. Please try again.");
     } finally {
       setSaving(false);
@@ -129,7 +132,7 @@ const GeneralSettings: Component<GeneralSettingsProps> = (props) => {
       await siteSettingsService.updateSetting("last_settings_backup", backupData.timestamp);
       setLastBackup(backupData.timestamp);
     } catch (error) {
-      console.error("Error creating backup:", error);
+      logger.error("Error creating backup:", error);
     }
   };
 
@@ -148,7 +151,7 @@ const GeneralSettings: Component<GeneralSettingsProps> = (props) => {
         URL.revokeObjectURL(url);
       }
     } catch (error) {
-      console.error("Error downloading backup:", error);
+      logger.error("Error downloading backup:", error);
       alert("Failed to download backup.");
     }
   };
@@ -169,7 +172,7 @@ const GeneralSettings: Component<GeneralSettingsProps> = (props) => {
         alert("Settings restored successfully from backup!");
       }
     } catch (error) {
-      console.error("Error restoring backup:", error);
+      logger.error("Error restoring backup:", error);
       alert("Invalid backup file. Please select a valid backup file.");
     }
     

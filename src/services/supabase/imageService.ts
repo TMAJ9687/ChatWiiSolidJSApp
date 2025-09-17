@@ -1,4 +1,7 @@
 import { supabase } from "../../config/supabase";
+import { createServiceLogger } from "../../utils/logger";
+
+const logger = createServiceLogger('ImageService');
 
 interface ImageUploadResult {
   url: string;
@@ -137,7 +140,7 @@ class ImageService {
         type: processedFile.type
       };
     } catch (error) {
-      console.error('Error uploading image:', error);
+      logger.error('Error uploading image:', error);
       throw new Error('Failed to upload image. Please try again.');
     }
   }
@@ -153,7 +156,7 @@ class ImageService {
         throw error;
       }
     } catch (error) {
-      console.error('Error deleting image:', error);
+      logger.error('Error deleting image:', error);
       throw new Error('Failed to delete image');
     }
   }
@@ -222,7 +225,7 @@ class ImageService {
 
       return publicUrlData.publicUrl;
     } catch (error) {
-      console.error('Error uploading avatar:', error);
+      logger.error('Error uploading avatar:', error);
       throw new Error('Failed to upload avatar. Please try again.');
     }
   }

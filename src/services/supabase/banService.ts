@@ -1,5 +1,8 @@
 import { supabase } from "../../config/supabase";
 import type { AdminActionResult } from "../../types/admin.types";
+import { createServiceLogger } from "../../utils/logger";
+
+const logger = createServiceLogger('BanService');
 
 export interface Ban {
   id: string;
@@ -40,7 +43,7 @@ class BanService {
       // The database function handles both ban creation and user status update
       return await this.createBan(banRequest);
     } catch (error) {
-      console.error("Error banning user:", error);
+      logger.error("Error banning user:", error);
       return {
         success: false,
         message: error instanceof Error ? error.message : 'Failed to ban user'
@@ -65,7 +68,7 @@ class BanService {
 
       return await this.createBan(banRequest);
     } catch (error) {
-      console.error("Error banning IP:", error);
+      logger.error("Error banning IP:", error);
       return {
         success: false,
         message: error instanceof Error ? error.message : 'Failed to ban IP'
@@ -101,7 +104,7 @@ class BanService {
         .single();
 
       if (fetchError) {
-        console.warn("Ban created but failed to fetch record:", fetchError);
+        logger.warn("Ban created but failed to fetch record:", fetchError);
       }
 
       return {
@@ -110,7 +113,7 @@ class BanService {
         data: banRecord ? this.convertToBan(banRecord) : undefined
       };
     } catch (error) {
-      console.error("Error creating ban:", error);
+      logger.error("Error creating ban:", error);
       throw error;
     }
   }
@@ -139,7 +142,7 @@ class BanService {
           .eq("user_id", userId)
       ]);
     } catch (error) {
-      console.error("Error updating user status to banned:", error);
+      logger.error("Error updating user status to banned:", error);
       // Don't throw error here to avoid failing the ban operation
     }
   }
@@ -173,7 +176,7 @@ class BanService {
         message: 'User unbanned successfully'
       };
     } catch (error) {
-      console.error("Error unbanning user:", error);
+      logger.error("Error unbanning user:", error);
       return {
         success: false,
         message: error instanceof Error ? error.message : 'Failed to unban user'
@@ -199,7 +202,7 @@ class BanService {
         message: 'IP unbanned successfully'
       };
     } catch (error) {
-      console.error("Error unbanning IP:", error);
+      logger.error("Error unbanning IP:", error);
       return {
         success: false,
         message: error instanceof Error ? error.message : 'Failed to unban IP'
@@ -218,7 +221,7 @@ class BanService {
         .limit(1);
 
       if (error) {
-        console.error("Error checking user ban status:", error);
+        logger.error("Error checking user ban status:", error);
         return false;
       }
 
@@ -236,7 +239,7 @@ class BanService {
 
       return true;
     } catch (error) {
-      console.error("Error checking user ban status:", error);
+      logger.error("Error checking user ban status:", error);
       return false;
     }
   }
@@ -252,7 +255,7 @@ class BanService {
         .limit(1);
 
       if (error) {
-        console.error("Error checking IP ban status:", error);
+        logger.error("Error checking IP ban status:", error);
         return false;
       }
 
@@ -270,7 +273,7 @@ class BanService {
 
       return true;
     } catch (error) {
-      console.error("Error checking IP ban status:", error);
+      logger.error("Error checking IP ban status:", error);
       return false;
     }
   }
@@ -289,7 +292,7 @@ class BanService {
         .range(from, to);
 
       if (error) {
-        console.error("Error getting active bans:", error);
+        logger.error("Error getting active bans:", error);
         return { bans: [], total: 0 };
       }
 
@@ -300,7 +303,7 @@ class BanService {
 
       return { bans: activeBans, total: count || 0 };
     } catch (error) {
-      console.error("Error getting active bans:", error);
+      logger.error("Error getting active bans:", error);
       return { bans: [], total: 0 };
     }
   }
@@ -315,13 +318,13 @@ class BanService {
         .order("created_at", { ascending: false });
 
       if (error) {
-        console.error("Error getting user ban history:", error);
+        logger.error("Error getting user ban history:", error);
         return [];
       }
 
       return (data || []).map(this.convertToBan);
     } catch (error) {
-      console.error("Error getting user ban history:", error);
+      logger.error("Error getting user ban history:", error);
       return [];
     }
   }
@@ -336,13 +339,13 @@ class BanService {
         .order("created_at", { ascending: false });
 
       if (error) {
-        console.error("Error getting IP ban history:", error);
+        logger.error("Error getting IP ban history:", error);
         return [];
       }
 
       return (data || []).map(this.convertToBan);
     } catch (error) {
-      console.error("Error getting IP ban history:", error);
+      logger.error("Error getting IP ban history:", error);
       return [];
     }
   }
@@ -381,9 +384,9 @@ class BanService {
         }
       }
 
-      console.log(`Ban ${banId} expired and cleaned up`);
+      logger.debug(`Ban ${banId} expired and cleaned up`);
     } catch (error) {
-      console.error("Error expiring ban:", error);
+      logger.error("Error expiring ban:", error);
     }
   }
 
@@ -435,10 +438,10 @@ class BanService {
           await this.expireBan(ban.id);
         }
         
-        console.log(`Cleaned up ${expiredBans.length} expired bans`);
+        logger.debug(`Cleaned up ${expiredBans.length} expired bans`);
       }
     } catch (error) {
-      console.error("Error cleaning up expired bans:", error);
+      logger.error("Error cleaning up expired bans:", error);
     }
   }
 
@@ -516,7 +519,7 @@ class BanService {
         temporaryBans: temporaryResult.count || 0
       };
     } catch (error) {
-      console.error("Error getting ban statistics:", error);
+      logger.error("Error getting ban statistics:", error);
       return {
         totalActiveBans: 0,
         userBans: 0,

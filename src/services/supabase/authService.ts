@@ -3,6 +3,9 @@ import { presenceService } from "./presenceService";
 import { connectionService } from "../connectionService";
 import type { User } from "../../types/user.types";
 import type { Database } from "../../types/database.types";
+import { createServiceLogger } from "../../utils/logger";
+
+const logger = createServiceLogger('AuthService');
 
 type SupabaseUser = Database['public']['Tables']['users']['Row'];
 type SupabaseUserInsert = Database['public']['Tables']['users']['Insert'];
@@ -45,7 +48,7 @@ class AuthService {
       // Convert and return user
       return this.convertSupabaseUser(userProfile);
     } catch (error) {
-      console.error("Error signing in with email:", error);
+      logger.error("Error signing in with email:", error);
       throw error;
     }
   }
@@ -117,7 +120,7 @@ class AuthService {
         avatar: `/avatars/standard/${userData.gender}.png`,
       };
     } catch (error) {
-      console.error("Error signing in:", error);
+      logger.error("Error signing in:", error);
       throw new Error("Failed to sign in. Please try again.");
     }
   }
@@ -145,7 +148,7 @@ class AuthService {
         
         // Log retry attempt
         if (i < maxRetries) {
-          console.warn(`Request failed, retrying... (${i + 1}/${maxRetries})`, error.message);
+          logger.warn(`Request failed, retrying... (${i + 1}/${maxRetries})`, error.message);
           await new Promise(resolve => setTimeout(resolve, delay * (i + 1)));
         }
       }
@@ -166,7 +169,7 @@ class AuthService {
           () => supabase.auth.getUser()
         );
       } catch (connectionError) {
-        console.warn("Connection service failed, using basic retry:", connectionError);
+        logger.warn("Connection service failed, using basic retry:", connectionError);
         userData = await this.retryRequest(() => supabase.auth.getUser());
       }
 
@@ -186,7 +189,7 @@ class AuthService {
         );
         userProfile = result;
       } catch (connectionError) {
-        console.warn("Connection service failed for profile, using basic retry:", connectionError);
+        logger.warn("Connection service failed for profile, using basic retry:", connectionError);
         userProfile = await this.retryRequest(
           () => supabase
             .from("users")
@@ -199,13 +202,13 @@ class AuthService {
       const { data: profile, error } = userProfile;
 
       if (error || !profile) {
-        console.warn("User profile not found or error:", error);
+        logger.warn("User profile not found or error:", error);
         return null;
       }
 
       // Check if user is kicked or banned - auto sign out if so
       if (profile.status === 'kicked' || profile.status === 'banned') {
-        console.log(`User is ${profile.status}, signing out automatically`);
+        logger.debug(`User is ${profile.status}, signing out automatically`);
         await this.signOut();
         return null;
       }
@@ -213,13 +216,13 @@ class AuthService {
       // Convert Supabase user format to app format
       return this.convertSupabaseUser(profile);
     } catch (error: any) {
-      console.error("Error getting current user:", error);
+      logger.error("Error getting current user:", error);
       
       // Graceful error handling
       if (error.message?.includes('Failed to fetch') || 
           error.message?.includes('CORS') || 
           error.message?.includes('502')) {
-        console.warn("Network connectivity issue. Session may be stale.");
+        logger.warn("Network connectivity issue. Session may be stale.");
         this.currentUser = null;
       }
       
@@ -250,7 +253,7 @@ class AuthService {
           await presenceService.setUserOffline(this.currentUser.id);
         }
       } catch (error) {
-        console.warn("Error during logout cleanup:", error);
+        logger.warn("Error during logout cleanup:", error);
         // Continue with logout even if cleanup fails
         await presenceService.setUserOffline(this.currentUser.id);
       }
@@ -265,7 +268,7 @@ class AuthService {
       try {
         await supabase.auth.signOut();
       } catch (error) {
-        console.warn("Error during auth signout:", error);
+        logger.warn("Error during auth signout:", error);
         // Even if auth signout fails, we've cleared the local state
       }
     }

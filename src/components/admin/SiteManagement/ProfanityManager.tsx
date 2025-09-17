@@ -1,6 +1,7 @@
 import { Component, createSignal, onMount, For, Show } from "solid-js";
 import { FiSave, FiPlus, FiTrash2, FiDownload, FiUpload, FiSearch, FiCheck, FiX, FiAlertTriangle } from "solid-icons/fi";
 import { profanityService } from "../../../services/supabase/profanityService";
+import { createServiceLogger } from "../../../utils/logger";
 
 interface ProfanityWord {
   id: string;
@@ -13,6 +14,8 @@ interface ProfanityWord {
 interface ProfanityManagerProps {
   currentUserId: string;
 }
+
+const logger = createServiceLogger('ProfanityManager');
 
 const ProfanityManager: Component<ProfanityManagerProps> = (props) => {
   const [nicknameWords, setNicknameWords] = createSignal<ProfanityWord[]>([]);
@@ -49,7 +52,7 @@ const ProfanityManager: Component<ProfanityManagerProps> = (props) => {
       setNicknameWords(nickname);
       setChatWords(chat);
     } catch (error) {
-      console.error("Error loading profanity words:", error);
+      logger.error("Error loading profanity words:", error);
     } finally {
       setLoading(false);
     }
@@ -78,7 +81,7 @@ const ProfanityManager: Component<ProfanityManagerProps> = (props) => {
         setNewChatWord("");
       }
     } catch (error) {
-      console.error("Error adding word:", error);
+      logger.error("Error adding word:", error);
       alert("Failed to add word. Please try again.");
     } finally {
       setSaving(false);
@@ -93,7 +96,7 @@ const ProfanityManager: Component<ProfanityManagerProps> = (props) => {
       await profanityService.removeWord(wordId);
       await loadWords(); // Reload to update the list
     } catch (error) {
-      console.error("Error removing word:", error);
+      logger.error("Error removing word:", error);
       alert("Failed to remove word. Please try again.");
     } finally {
       setSaving(false);
@@ -119,7 +122,7 @@ const ProfanityManager: Component<ProfanityManagerProps> = (props) => {
         blockedWords,
       });
     } catch (error) {
-      console.error("Error testing profanity:", error);
+      logger.error("Error testing profanity:", error);
       alert("Failed to test text. Please try again.");
     } finally {
       setTesting(false);
@@ -178,7 +181,7 @@ const ProfanityManager: Component<ProfanityManagerProps> = (props) => {
           await profanityService.addWord(word, type);
           addedCount++;
         } catch (error) {
-          console.error(`Error adding word "${word}":`, error);
+          logger.error(`Error adding word "${word}":`, error);
           skippedCount++;
         }
       }
@@ -186,7 +189,7 @@ const ProfanityManager: Component<ProfanityManagerProps> = (props) => {
       await loadWords();
       alert(`Import complete! Added: ${addedCount}, Skipped: ${skippedCount}`);
     } catch (error) {
-      console.error("Error importing words:", error);
+      logger.error("Error importing words:", error);
       alert("Failed to import words. Please check the file format.");
     } finally {
       setSaving(false);

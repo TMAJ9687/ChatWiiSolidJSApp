@@ -2,6 +2,9 @@
  * Cloudflare Turnstile Service
  * Provides bot prevention capabilities for the landing page
  */
+import { createServiceLogger } from "../../utils/logger";
+
+const logger = createServiceLogger('RecaptchaService');
 
 interface TurnstileWindow extends Window {
   turnstile?: {
@@ -42,15 +45,15 @@ class TurnstileService {
    * @param siteKey - Turnstile site key from Cloudflare Dashboard
    */
   async init(siteKey: string): Promise<void> {
-    console.log('Turnstile: Initializing with site key:', siteKey);
+    logger.debug('Turnstile: Initializing with site key:', siteKey);
     
     if (!siteKey || typeof window === 'undefined') {
-      console.warn('reCAPTCHA: Invalid site key or running on server');
+      logger.warn('reCAPTCHA: Invalid site key or running on server');
       return;
     }
 
     if (siteKey === 'your_recaptcha_site_key_here') {
-      console.warn('reCAPTCHA: Default placeholder site key detected');
+      logger.warn('reCAPTCHA: Default placeholder site key detected');
       return;
     }
 
@@ -59,7 +62,7 @@ class TurnstileService {
     try {
       // Load reCAPTCHA script if not already loaded
       if (!this.isLoaded) {
-        console.log('reCAPTCHA: Loading script...');
+        logger.debug('reCAPTCHA: Loading script...');
         await this.loadScript();
       }
 
@@ -74,10 +77,10 @@ class TurnstileService {
         throw new Error('reCAPTCHA script failed to load after 5 seconds');
       }
 
-      console.log('reCAPTCHA: Service initialized successfully');
+      logger.debug('reCAPTCHA: Service initialized successfully');
       this.isInitialized = true;
     } catch (error) {
-      console.error('reCAPTCHA: Initialization failed:', error);
+      logger.error('reCAPTCHA: Initialization failed:', error);
       this.isInitialized = false;
       throw error;
     }
@@ -90,31 +93,31 @@ class TurnstileService {
     return new Promise((resolve, reject) => {
       const existingScript = document.querySelector('script[src*="recaptcha"]');
       if (existingScript) {
-        console.log('reCAPTCHA: Script already exists');
+        logger.debug('reCAPTCHA: Script already exists');
         this.isLoaded = true;
         resolve();
         return;
       }
 
-      console.log('Turnstile: Creating script element');
+      logger.debug('Turnstile: Creating script element');
       const script = document.createElement('script');
       script.src = 'https://challenges.cloudflare.com/turnstile/v0/api.js';
       script.async = true;
       script.defer = true;
 
       script.onload = () => {
-        console.log('Turnstile: Script loaded successfully');
+        logger.debug('Turnstile: Script loaded successfully');
         this.isLoaded = true;
         resolve();
       };
 
       script.onerror = (error) => {
-        console.error('Turnstile: Script loading failed', error);
+        logger.error('Turnstile: Script loading failed', error);
         reject(new Error('Failed to load Turnstile script'));
       };
 
       document.head.appendChild(script);
-      console.log('reCAPTCHA: Script element added to head');
+      logger.debug('reCAPTCHA: Script element added to head');
     });
   }
 
@@ -134,7 +137,7 @@ class TurnstileService {
     options: Partial<RecaptchaOptions> = {}
   ): Promise<boolean> {
     if (!this.isInitialized || !window.grecaptcha) {
-      console.warn('reCAPTCHA: Service not initialized');
+      logger.warn('reCAPTCHA: Service not initialized');
       return false;
     }
 
@@ -165,7 +168,7 @@ class TurnstileService {
         window.grecaptcha!.ready(() => {
           const element = document.getElementById(elementId);
           if (!element) {
-            console.error(`reCAPTCHA: Element with ID '${elementId}' not found`);
+            logger.error(`reCAPTCHA: Element with ID '${elementId}' not found`);
             return;
           }
 
@@ -185,7 +188,7 @@ class TurnstileService {
 
       return true;
     } catch (error) {
-      console.error('reCAPTCHA: Failed to render widget', error);
+      logger.error('reCAPTCHA: Failed to render widget', error);
       return false;
     }
   }
@@ -230,7 +233,7 @@ class TurnstileService {
   async verifyToken(token: string): Promise<boolean> {
     // This is a placeholder - implement server-side verification
     // DO NOT verify tokens on the client side in production!
-    console.warn('reCAPTCHA: Implement server-side token verification');
+    logger.warn('reCAPTCHA: Implement server-side token verification');
     
     // For demo purposes, we'll just check if token exists
     return token.length > 0;

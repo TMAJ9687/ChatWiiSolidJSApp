@@ -1,5 +1,8 @@
 import { supabase } from "../../config/supabase";
 import { presenceService } from "./presenceService";
+import { createServiceLogger } from "../../utils/logger";
+
+const logger = createServiceLogger('ManualCleanupService');
 
 /**
  * Manual cleanup service for testing and admin use
@@ -40,7 +43,7 @@ class ManualCleanupService {
         .order("created_at", { ascending: false });
 
       if (error) {
-        console.error("Error fetching users:", error);
+        logger.error("Error fetching users:", error);
         throw error;
       }
 
@@ -56,7 +59,7 @@ class ManualCleanupService {
       // User stats retrieved successfully
       return stats;
     } catch (error) {
-      console.error("Error in getAllUsers:", error);
+      logger.error("Error in getAllUsers:", error);
       throw error;
     }
   }
@@ -72,14 +75,14 @@ class ManualCleanupService {
         .order("last_seen", { ascending: false });
 
       if (error) {
-        console.error("Error fetching presence:", error);
+        logger.error("Error fetching presence:", error);
         throw error;
       }
 
       // Found presence records
       return presence || [];
     } catch (error) {
-      console.error("Error in getAllPresence:", error);
+      logger.error("Error in getAllPresence:", error);
       throw error;
     }
   }

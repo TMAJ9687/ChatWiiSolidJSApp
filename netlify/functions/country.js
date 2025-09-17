@@ -42,7 +42,6 @@ export async function handler(event, context) {
     };
 
   } catch (error) {
-    console.error('Country detection error:', error);
     
     return {
       statusCode: 200, // Return 200 to avoid errors in frontend

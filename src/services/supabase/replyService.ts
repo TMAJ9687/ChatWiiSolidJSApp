@@ -1,6 +1,9 @@
 import { supabase } from "../../config/supabase";
 import { messageService } from "./messageService";
 import type { Message } from "../../types/message.types";
+import { createServiceLogger } from "../../utils/logger";
+
+const logger = createServiceLogger('ReplyService');
 
 class ReplyService {
   /**
@@ -51,7 +54,7 @@ class ReplyService {
         senderNickname
       );
     } catch (error) {
-      console.error('Error sending reply:', error);
+      logger.error('Error sending reply:', error);
       throw error;
     }
   }
@@ -126,7 +129,7 @@ class ReplyService {
         senderNickname: msg.sender_nickname
       }));
     } catch (error) {
-      console.error('Error getting reply chain:', error);
+      logger.error('Error getting reply chain:', error);
       return [];
     }
   }

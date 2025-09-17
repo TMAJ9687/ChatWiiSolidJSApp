@@ -1,6 +1,9 @@
 import { Component, createSignal, createEffect, For, Show } from "solid-js";
 import { adminService } from "../../services/supabase";
 import type { Feedback } from "../../services/supabase/feedbackService";
+import { createServiceLogger } from "../../utils/logger";
+
+const logger = createServiceLogger('FeedbackPanel');
 
 const FeedbackPanel: Component = () => {
   const [feedback, setFeedback] = createSignal<Feedback[]>([]);
@@ -20,7 +23,7 @@ const FeedbackPanel: Component = () => {
       setFeedback(result.feedback);
       setTotalCount(result.total);
     } catch (error) {
-      console.error("Error loading feedback:", error);
+      logger.error("Error loading feedback:", error);
     } finally {
       setLoading(false);
     }
@@ -43,7 +46,7 @@ const FeedbackPanel: Component = () => {
       await adminService.updateFeedbackStatus(feedbackId, newStatus);
       await loadFeedback();
     } catch (error) {
-      console.error("Error updating feedback status:", error);
+      logger.error("Error updating feedback status:", error);
       alert("Failed to update feedback status. Please try again.");
     } finally {
       setActionLoading(null);
@@ -60,7 +63,7 @@ const FeedbackPanel: Component = () => {
       await adminService.deleteFeedback(feedbackId);
       await loadFeedback();
     } catch (error) {
-      console.error("Error deleting feedback:", error);
+      logger.error("Error deleting feedback:", error);
       alert("Failed to delete feedback. Please try again.");
     } finally {
       setActionLoading(null);

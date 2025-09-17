@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { auditService } from '../../../services/supabase/auditService';
+import { createServiceLogger } from '../../../utils/logger';
 
 interface AuditStatisticsProps {
   className?: string;
@@ -12,6 +13,8 @@ interface StatisticsData {
   entriesByAdmin: Record<string, number>;
   dailyActivity: Array<{ date: string; count: number }>;
 }
+
+const logger = createServiceLogger('AuditStatistics');
 
 export const AuditStatistics: React.FC<AuditStatisticsProps> = ({ className = '' }) => {
   const [statistics, setStatistics] = useState<StatisticsData | null>(null);
@@ -34,7 +37,7 @@ export const AuditStatistics: React.FC<AuditStatisticsProps> = ({ className = ''
       );
       setStatistics(stats);
     } catch (error) {
-      console.error('Failed to load audit statistics:', error);
+      logger.error('Failed to load audit statistics:', error);
     } finally {
       setLoading(false);
     }

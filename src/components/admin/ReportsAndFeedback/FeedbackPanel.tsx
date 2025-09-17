@@ -109,7 +109,9 @@ export const FeedbackPanel: React.FC<FeedbackPanelProps> = ({ className = '' }) 
     
     // Mark as read if it's pending
     if (feedbackItem.status === 'pending') {
-      feedbackService.markAsRead(feedbackItem.id).catch(console.error);
+      feedbackService.markAsRead(feedbackItem.id).catch(error => {
+        // Silently handle read status update errors
+      });
       setFeedback(prev => prev.map(item => 
         item.id === feedbackItem.id ? { ...item, status: 'read' as const } : item
       ));

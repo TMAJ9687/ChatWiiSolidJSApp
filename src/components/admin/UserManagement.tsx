@@ -4,6 +4,7 @@ import { adminService } from "../../services/supabase/adminService";
 import CountryFlag from "../shared/CountryFlag";
 import type { User } from "../../types/user.types";
 import { countries } from "../../utils/countries";
+import { createServiceLogger } from "../../utils/logger";
 
 interface UserManagementProps {
   currentUserId: string;
@@ -26,6 +27,8 @@ interface UserActivity {
   blocksSubmitted: number;
   lastSeen: string | null;
 }
+
+const logger = createServiceLogger('UserManagement');
 
 const UserManagement: Component<UserManagementProps> = (props) => {
   const [users, setUsers] = createSignal<User[]>([]);
@@ -66,7 +69,7 @@ const UserManagement: Component<UserManagementProps> = (props) => {
       setUsers(result.users);
       setTotal(result.total);
     } catch (error) {
-      console.error("Error loading users:", error);
+      logger.error("Error loading users:", error);
     } finally {
       setLoading(false);
     }
@@ -114,7 +117,7 @@ const UserManagement: Component<UserManagementProps> = (props) => {
       }
       await loadUsers();
     } catch (error) {
-      console.error(`Error performing ${action}:`, error);
+      logger.error(`Error performing ${action}:`, error);
       alert(`Failed to ${action} user. Please try again.`);
     } finally {
       setActionLoading(null);
@@ -130,7 +133,7 @@ const UserManagement: Component<UserManagementProps> = (props) => {
       const activity = await adminService.getUserActivity(user.id);
       setUserActivity(activity);
     } catch (error) {
-      console.error("Error loading user activity:", error);
+      logger.error("Error loading user activity:", error);
     }
   };
 
@@ -227,7 +230,7 @@ const UserManagement: Component<UserManagementProps> = (props) => {
       setSelectedUsers(new Set());
       alert(`Successfully ${actionName}${action === "activate" || action === "suspend" ? "ed" : action === "ban" ? "ned" : "d"} ${selected.length} user${selected.length > 1 ? 's' : ''}`);
     } catch (error) {
-      console.error(`Error performing bulk ${action}:`, error);
+      logger.error(`Error performing bulk ${action}:`, error);
       alert(`Failed to ${actionName} users. Please try again.`);
     } finally {
       setBulkActionLoading(false);

@@ -5,6 +5,7 @@ import { authService } from '../../../services/supabase/authService';
 import { adminService } from '../../../services/supabase/adminService';
 import type { User } from '../../../types/user.types';
 import type { AdminAuditLog } from '../../../types/admin.types';
+import { createServiceLogger } from '../../../utils/logger';
 
 interface AdminPreferencesProps {
   currentUser: User;
@@ -28,6 +29,8 @@ interface AdminSession {
   userAgent?: string;
   isActive: boolean;
 }
+
+const logger = createServiceLogger('AdminPreferences');
 
 export const AdminPreferences: Component<AdminPreferencesProps> = (props) => {
   const navigate = useNavigate();
@@ -72,7 +75,7 @@ export const AdminPreferences: Component<AdminPreferencesProps> = (props) => {
         setPreferences(JSON.parse(savedPreferences));
       }
     } catch (error) {
-      console.error('Error loading preferences:', error);
+      logger.error('Error loading preferences:', error);
     }
   };
 
@@ -81,7 +84,7 @@ export const AdminPreferences: Component<AdminPreferencesProps> = (props) => {
       const { logs } = await adminService.getAuditLogs(props.currentUser.id, undefined, 1, 10);
       setRecentActivity(logs);
     } catch (error) {
-      console.error('Error loading recent activity:', error);
+      logger.error('Error loading recent activity:', error);
     }
   };
 
@@ -99,7 +102,7 @@ export const AdminPreferences: Component<AdminPreferencesProps> = (props) => {
       ];
       setAdminSessions(mockSessions);
     } catch (error) {
-      console.error('Error loading admin sessions:', error);
+      logger.error('Error loading admin sessions:', error);
     }
   };
 
@@ -119,7 +122,7 @@ export const AdminPreferences: Component<AdminPreferencesProps> = (props) => {
 
       setMessage({ type: 'success', text: 'Preferences saved successfully!' });
     } catch (error) {
-      console.error('Error saving preferences:', error);
+      logger.error('Error saving preferences:', error);
       setMessage({ 
         type: 'error', 
         text: error instanceof Error ? error.message : 'Failed to save preferences' 
@@ -151,7 +154,7 @@ export const AdminPreferences: Component<AdminPreferencesProps> = (props) => {
       await authService.signOut();
       navigate('/');
     } catch (error) {
-      console.error('Error signing out:', error);
+      logger.error('Error signing out:', error);
       setMessage({ 
         type: 'error', 
         text: 'Failed to sign out. Please try again.' 

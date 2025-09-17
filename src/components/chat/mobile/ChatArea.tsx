@@ -41,12 +41,15 @@ import ClearConversationModal from "./ClearConversationModal";
 import EmojiPicker from "./EmojiPicker";
 import type { User } from "../../../types/user.types";
 import type { Message } from "../../../types/message.types";
+import { createServiceLogger } from "../../../utils/logger";
 
 interface ChatAreaProps {
   currentUser: User | null;
   selectedUser: User | null;
   onCloseChat: () => void;
 }
+
+const logger = createServiceLogger('ChatArea-Mobile');
 
 const ChatArea: Component<ChatAreaProps> = (props) => {
   const [message, setMessage] = createSignal("");
@@ -220,7 +223,7 @@ const ChatArea: Component<ChatAreaProps> = (props) => {
             setIsBlockedBy(blockedBy);
             setBlockingMessage(null); // Clear any error messages
           } catch (error) {
-            console.error("Error refreshing blocking status:", error);
+            logger.error("Error refreshing blocking status:", error);
           }
         }
       )
@@ -332,7 +335,7 @@ const ChatArea: Component<ChatAreaProps> = (props) => {
       }
       setMessage("");
     } catch (error) {
-      console.error("Failed to send message:", error);
+      logger.error("Failed to send message:", error);
     } finally {
       setSending(false);
     }
@@ -394,7 +397,7 @@ const ChatArea: Component<ChatAreaProps> = (props) => {
       // Close modal
       setShowBlockModal(false);
     } catch (error) {
-      console.error("Error blocking/unblocking user:", error);
+      logger.error("Error blocking/unblocking user:", error);
       // Revert UI state on error
       setIsBlocked(!isBlockAction());
       setShowBlockModal(false);
@@ -515,7 +518,7 @@ const ChatArea: Component<ChatAreaProps> = (props) => {
       setSelectedFile(null);
       setShowImageUpload(false);
     } catch (error) {
-      console.error("Failed to send image message:", error);
+      logger.error("Failed to send image message:", error);
     }
   };
 
@@ -604,7 +607,7 @@ const ChatArea: Component<ChatAreaProps> = (props) => {
 
       setShowVoiceRecorder(false);
     } catch (error) {
-      console.error("Failed to send voice message:", error);
+      logger.error("Failed to send voice message:", error);
     } finally {
       setSending(false);
     }
@@ -635,7 +638,7 @@ const ChatArea: Component<ChatAreaProps> = (props) => {
       // The real-time listener should update automatically
       // Conversation cleared successfully
     } catch (error) {
-      console.error("Failed to clear conversation:", error);
+      logger.error("Failed to clear conversation:", error);
     }
   };
 

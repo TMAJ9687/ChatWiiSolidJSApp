@@ -2,6 +2,9 @@ import { Component, createSignal, onMount, onCleanup, Show } from "solid-js";
 import { useNavigate } from "@solidjs/router";
 import { kickService, type KickNotification } from "../../services/supabase/kickService";
 import { authService } from "../../services/supabase";
+import { createServiceLogger } from "../../utils/logger";
+
+const logger = createServiceLogger('KickNotificationHandler');
 
 interface KickNotificationHandlerProps {
   userId?: string;
@@ -57,13 +60,13 @@ const KickNotificationHandler: Component<KickNotificationHandlerProps> = (props)
         });
       }
     } catch (error) {
-      console.error("Error checking offline kick status:", error);
+      logger.error("Error checking offline kick status:", error);
     }
   };
 
   // Handle kick notification
   const handleKickNotification = (notification: KickNotification) => {
-    console.log("User kicked:", notification);
+    logger.info("User kicked:", notification);
     
     setKickReason(notification.reason || "No reason provided");
     setShowKickWarning(true);
@@ -106,7 +109,7 @@ const KickNotificationHandler: Component<KickNotificationHandlerProps> = (props)
       // Navigate to landing page
       navigate("/");
     } catch (error) {
-      console.error("Error during kick redirect:", error);
+      logger.error("Error during kick redirect:", error);
       // Force redirect even if cleanup fails
       navigate("/");
     }

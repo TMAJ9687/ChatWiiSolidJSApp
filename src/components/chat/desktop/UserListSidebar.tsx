@@ -5,6 +5,7 @@ import { blockingServiceWorkaround as blockingService } from "../../../services/
 import { supabase } from "../../../config/supabase";
 import { COUNTRIES } from "../../../utils/countries";
 import type { User } from "../../../types/user.types";
+import { createServiceLogger } from "../../../utils/logger";
 
 interface FilterOptions {
   genders: Set<'male' | 'female'>;
@@ -19,6 +20,8 @@ interface UserListSidebarProps {
   onSelectUser: (user: User) => void;
   currentUser: User | null;
 }
+
+const logger = createServiceLogger('UserListSidebar-Desktop');
 
 const UserListSidebar: Component<UserListSidebarProps> = (props) => {
   const [blockedUsers, setBlockedUsers] = createSignal<string[]>([]);
@@ -52,7 +55,7 @@ const UserListSidebar: Component<UserListSidebarProps> = (props) => {
         const whoBlockedMe = await blockingService.getUsersWhoBlockedMe();
         setUsersWhoBlockedMe(whoBlockedMe);
       } catch (error) {
-        console.error('Error loading blocked users:', error);
+        logger.error('Error loading blocked users:', error);
       }
     }
   });
@@ -99,7 +102,7 @@ const UserListSidebar: Component<UserListSidebarProps> = (props) => {
           setBlockedUsers(blocked.map(b => b.id));
           setUsersWhoBlockedMe(whoBlockedMe);
         } catch (error) {
-          console.error('Error refreshing blocked users:', error);
+          logger.error('Error refreshing blocked users:', error);
         }
       })
       .subscribe();

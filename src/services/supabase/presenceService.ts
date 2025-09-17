@@ -1,6 +1,9 @@
 import { supabase } from "../../config/supabase";
 import type { User } from "../../types/user.types";
 import type { RealtimeChannel } from "@supabase/supabase-js";
+import { createServiceLogger } from "../../utils/logger";
+
+const logger = createServiceLogger('PresenceService');
 
 interface PresenceData {
   user_id: string;
@@ -65,7 +68,7 @@ class PresenceService {
         });
 
       if (error) {
-        console.error("Error setting user online:", error);
+        logger.error("Error setting user online:", error);
         throw error;
       }
 
@@ -117,7 +120,7 @@ class PresenceService {
         }
       });
     } catch (error) {
-      console.error("Error setting up presence:", error);
+      logger.error("Error setting up presence:", error);
       throw error;
     }
   }
@@ -161,7 +164,7 @@ class PresenceService {
         this.presenceChannel = null;
       }
     } catch (error) {
-      console.error("Error setting user offline:", error);
+      logger.error("Error setting user offline:", error);
     }
   }
 
@@ -199,7 +202,7 @@ class PresenceService {
         .order("joined_at", { ascending: false });
 
       if (error) {
-        console.error("Error fetching online users:", error);
+        logger.error("Error fetching online users:", error);
         return [];
       }
 
@@ -217,7 +220,7 @@ class PresenceService {
         createdAt: presence.joined_at,
       }));
     } catch (error) {
-      console.error("Error getting online users:", error);
+      logger.error("Error getting online users:", error);
       return [];
     }
   }
@@ -241,7 +244,7 @@ class PresenceService {
       .eq("user_id", userId)
       .then(({ error }) => {
         if (error) {
-          console.error("Error updating activity:", error);
+          logger.error("Error updating activity:", error);
         }
       });
   }
@@ -256,13 +259,13 @@ class PresenceService {
         .ilike("nickname", nickname);
 
       if (error) {
-        console.error("Error checking nickname:", error);
+        logger.error("Error checking nickname:", error);
         return false;
       }
 
       return (data?.length || 0) > 0;
     } catch (error) {
-      console.error("Error checking nickname:", error);
+      logger.error("Error checking nickname:", error);
       return false;
     }
   }
@@ -276,13 +279,13 @@ class PresenceService {
         .eq("online", true);
 
       if (error) {
-        console.error("Error getting online count:", error);
+        logger.error("Error getting online count:", error);
         return 0;
       }
 
       return count || 0;
     } catch (error) {
-      console.error("Error getting online count:", error);
+      logger.error("Error getting online count:", error);
       return 0;
     }
   }
@@ -319,7 +322,7 @@ class PresenceService {
           xhr.setRequestHeader('Authorization', `Bearer ${anonKey}`);
           xhr.send();
         } catch (error) {
-          console.warn('Sync cleanup failed:', error);
+          logger.warn('Sync cleanup failed:', error);
         }
 
         // Backup: Use sendBeacon for emergency cleanup
@@ -413,12 +416,12 @@ class PresenceService {
         .eq('online', true);
 
       if (error) {
-        console.error('Error cleaning up stale users:', error);
+        logger.error('Error cleaning up stale users:', error);
       } else {
         // Cleaned up stale users
       }
     } catch (error) {
-      console.error('Error in cleanupStaleUsers:', error);
+      logger.error('Error in cleanupStaleUsers:', error);
     }
   }
 }

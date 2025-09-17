@@ -12,6 +12,9 @@ import { authService } from "../services/supabase";
 import { adminService } from "../services/supabase/adminService";
 import SEOHead from "../components/seo/SEOHead";
 import type { User } from "../types/user.types";
+import { createServiceLogger } from "../utils/logger";
+
+const logger = createServiceLogger('Admin');
 
 const Admin: Component = () => {
   const navigate = useNavigate();
@@ -40,7 +43,7 @@ const Admin: Component = () => {
 
       setIsAuthorized(true);
     } catch (error) {
-      console.error("Error checking admin access:", error);
+      logger.error("Error checking admin access:", error);
       navigate("/");
     } finally {
       setLoading(false);

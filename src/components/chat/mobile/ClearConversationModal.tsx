@@ -1,6 +1,9 @@
 import { createSignal, createEffect, Show } from 'solid-js';
 import { FiTrash2, FiAlertTriangle, FiLoader, FiX, FiMessageCircle, FiUser } from 'solid-icons/fi';
 import { conversationService, type ConversationStats } from '../../../services/supabase';
+import { createServiceLogger } from '../../../utils/logger';
+
+const logger = createServiceLogger('ClearConversationModal');
 
 interface ClearConversationModalProps {
   isOpen: boolean;
@@ -30,7 +33,7 @@ export default function ClearConversationModal(props: ClearConversationModalProp
         );
         setStats(conversationStats);
       } catch (error) {
-        console.error('Failed to load conversation stats:', error);
+        logger.error('Failed to load conversation stats:', error);
         setError('Failed to load conversation statistics');
       } finally {
         setIsLoading(false);

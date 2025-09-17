@@ -1,6 +1,7 @@
 import { Component, createSignal, onMount, Show } from "solid-js";
 import { FiSave, FiRefreshCw, FiImage, FiMessageCircle, FiUsers, FiClock } from "solid-icons/fi";
 import { siteSettingsService } from "../../../services/supabase/siteSettingsService";
+import { createServiceLogger } from "../../../utils/logger";
 
 interface ChatSettingsData {
   maxImageUploadsStandard: number;
@@ -21,6 +22,8 @@ interface ChatSettingsData {
 interface ChatSettingsProps {
   currentUserId: string;
 }
+
+const logger = createServiceLogger('ChatSettings');
 
 const ChatSettings: Component<ChatSettingsProps> = (props) => {
   const [settings, setSettings] = createSignal<ChatSettingsData>({
@@ -96,7 +99,7 @@ const ChatSettings: Component<ChatSettingsProps> = (props) => {
         moderationLevel: (moderationLevel as 'low' | 'medium' | 'high') || 'medium',
       });
     } catch (error) {
-      console.error("Error loading chat settings:", error);
+      logger.error("Error loading chat settings:", error);
     } finally {
       setLoading(false);
     }
@@ -163,7 +166,7 @@ const ChatSettings: Component<ChatSettingsProps> = (props) => {
 
       alert("Chat settings saved successfully! Changes will be reflected on the main site immediately.");
     } catch (error) {
-      console.error("Error saving chat settings:", error);
+      logger.error("Error saving chat settings:", error);
       alert("Failed to save settings. Please try again.");
     } finally {
       setSaving(false);

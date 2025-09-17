@@ -1,6 +1,10 @@
 // Translation service remains the same as it uses external APIs
 // This is just a wrapper to maintain the same interface
 
+import { createServiceLogger } from "../../utils/logger";
+
+const logger = createServiceLogger('TranslationService');
+
 export interface TranslationResponse {
   translatedText: string;
   detectedLanguage: string;
@@ -70,7 +74,7 @@ class TranslationService {
         throw new Error('Translation failed');
       }
     } catch (error) {
-      console.error('Translation error:', error);
+      logger.error('Translation error:', error);
       return text; // Return original text if translation fails
     }
   }
@@ -101,7 +105,7 @@ class TranslationService {
       
       return data.responseData?.detectedSourceLanguage || 'en';
     } catch (error) {
-      console.error('Language detection error:', error);
+      logger.error('Language detection error:', error);
       return 'en'; // Default to English
     }
   }
@@ -161,7 +165,7 @@ class TranslationService {
         localStorage.setItem('preferredLanguage', langCode);
       }
     } catch (error) {
-      console.warn('Could not save preferred language:', error);
+      logger.warn('Could not save preferred language:', error);
     }
   }
 

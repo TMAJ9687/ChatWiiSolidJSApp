@@ -1,6 +1,9 @@
 import { createSignal } from "solid-js";
 import { useNavigate } from "@solidjs/router";
 import { presenceService } from "./supabase";
+import { createServiceLogger } from "../utils/logger";
+
+const logger = createServiceLogger('IdleService');
 
 class IdleService {
   private idleTimeout: number = 30 * 60 * 1000; // 30 minutes
@@ -49,7 +52,7 @@ class IdleService {
       try {
         presenceService.updateActivity(this.userId);
       } catch (error) {
-        console.warn("Failed to update presence activity:", error);
+        logger.warn("Failed to update presence activity:", error);
         // Don't throw error, just log it - presence is not critical
       }
     }

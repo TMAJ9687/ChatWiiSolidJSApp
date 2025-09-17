@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { banService, type Ban } from '../../../services/supabase/banService';
 import { adminService } from '../../../services/supabase/adminService';
 import type { AdminActionResult } from '../../../types/admin.types';
+import { createServiceLogger } from '../../../utils/logger';
 
 interface BannedUsersListProps {
   onRefresh?: () => void;
@@ -11,6 +12,8 @@ interface BanWithUserInfo extends Ban {
   userNickname?: string;
   adminNickname?: string;
 }
+
+const logger = createServiceLogger('BannedUsersList');
 
 export const BannedUsersList: React.FC<BannedUsersListProps> = ({ onRefresh }) => {
   const [bans, setBans] = useState<BanWithUserInfo[]>([]);
@@ -56,7 +59,7 @@ export const BannedUsersList: React.FC<BannedUsersListProps> = ({ onRefresh }) =
               enrichedBan.adminNickname = adminInfo.nickname;
             }
           } catch (err) {
-            console.warn('Failed to enrich ban data:', err);
+            logger.warn('Failed to enrich ban data:', err);
           }
           
           return enrichedBan;
@@ -66,7 +69,7 @@ export const BannedUsersList: React.FC<BannedUsersListProps> = ({ onRefresh }) =
       setBans(enrichedBans);
       setTotal(totalCount);
     } catch (err) {
-      console.error('Error loading bans:', err);
+      logger.error('Error loading bans:', err);
       setError('Failed to load banned users');
     } finally {
       setLoading(false);
@@ -100,7 +103,7 @@ export const BannedUsersList: React.FC<BannedUsersListProps> = ({ onRefresh }) =
         setError(result.message || 'Failed to unban');
       }
     } catch (err) {
-      console.error('Error unbanning:', err);
+      logger.error('Error unbanning:', err);
       setError(err instanceof Error ? err.message : 'Failed to unban');
     } finally {
       setUnbanLoading(null);
@@ -384,7 +387,7 @@ const BanHistoryModal: React.FC<BanHistoryModalProps> = ({ onClose, selectedBanI
               enrichedBan.adminNickname = adminInfo.nickname;
             }
           } catch (err) {
-            console.warn('Failed to enrich ban history data:', err);
+            logger.warn('Failed to enrich ban history data:', err);
           }
           
           return enrichedBan;
@@ -393,7 +396,7 @@ const BanHistoryModal: React.FC<BanHistoryModalProps> = ({ onClose, selectedBanI
 
       setHistoryBans(enrichedBans);
     } catch (err) {
-      console.error('Error loading ban history:', err);
+      logger.error('Error loading ban history:', err);
     } finally {
       setLoading(false);
     }

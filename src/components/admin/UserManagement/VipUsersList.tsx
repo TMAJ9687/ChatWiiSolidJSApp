@@ -7,6 +7,7 @@ import { userStatusService } from '../../../services/supabase/userStatusService'
 import { useRealtimeUserStatus } from '../../../hooks/useRealtimeUserStatus';
 import { supabase } from '../../../config/supabase';
 import { UserActionModal } from './UserActionModal';
+import { createServiceLogger } from '../../../utils/logger';
 
 interface VipUsersListProps {
   onlineOnly?: boolean;
@@ -18,6 +19,8 @@ interface VipUserActions {
   edit: (userId: string) => void;
   downgrade: (userId: string) => Promise<void>;
 }
+
+const logger = createServiceLogger('VipUsersList');
 
 export const VipUsersList: Component<VipUsersListProps> = (props) => {
   const [initialUsers, setInitialUsers] = createSignal<User[]>([]);
@@ -49,7 +52,7 @@ export const VipUsersList: Component<VipUsersListProps> = (props) => {
       const { users: vipUsers } = await adminService.getUsers(filters, 1, 100);
       setInitialUsers(vipUsers);
     } catch (err) {
-      console.error('Error loading VIP users:', err);
+      logger.error('Error loading VIP users:', err);
       setError('Failed to load VIP users');
     } finally {
       setLoading(false);
@@ -64,7 +67,7 @@ export const VipUsersList: Component<VipUsersListProps> = (props) => {
         setCurrentAdminId(user.id);
       }
     } catch (err) {
-      console.error('Error getting current admin ID:', err);
+      logger.error('Error getting current admin ID:', err);
     }
   };
 
@@ -90,7 +93,7 @@ export const VipUsersList: Component<VipUsersListProps> = (props) => {
         await kickService.kickUser(userId, currentAdminId(), reason);
         // Real-time updates will handle the UI refresh automatically
       } catch (err) {
-        console.error('Error kicking user:', err);
+        logger.error('Error kicking user:', err);
         throw err;
       }
     },
@@ -100,14 +103,14 @@ export const VipUsersList: Component<VipUsersListProps> = (props) => {
         await banService.banUser(userId, currentAdminId(), reason, duration);
         // Real-time updates will handle the UI refresh automatically
       } catch (err) {
-        console.error('Error banning user:', err);
+        logger.error('Error banning user:', err);
         throw err;
       }
     },
 
     edit: (userId: string) => {
       // TODO: Implement edit user functionality
-      console.log('Edit user:', userId);
+      logger.debug('Edit user:', userId);
     },
 
     downgrade: async (userId: string) => {
@@ -115,7 +118,7 @@ export const VipUsersList: Component<VipUsersListProps> = (props) => {
         await adminService.updateUserRole(userId, 'standard', currentAdminId());
         // Real-time updates will handle the UI refresh automatically
       } catch (err) {
-        console.error('Error downgrading user:', err);
+        logger.error('Error downgrading user:', err);
         throw err;
       }
     }
@@ -147,7 +150,7 @@ export const VipUsersList: Component<VipUsersListProps> = (props) => {
           break;
       }
     } catch (err) {
-      console.error(`Error performing ${action} action:`, err);
+      logger.error(`Error performing ${action} action:`, err);
       throw err;
     } finally {
       setSelectedUser(null);

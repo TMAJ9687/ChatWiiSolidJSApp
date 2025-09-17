@@ -2,6 +2,9 @@
  * Microsoft Clarity Analytics Service
  * Provides tracking functionality for user interactions and page views
  */
+import { createServiceLogger } from "../../utils/logger";
+
+const logger = createServiceLogger('ClarityService');
 
 interface ClarityWindow extends Window {
   clarity?: {
@@ -27,7 +30,7 @@ class ClarityService {
    */
   init(projectId: string): void {
     if (!projectId || typeof window === 'undefined' || projectId === 'DEFAULT_PROJECT_ID') {
-      console.warn('Clarity: Invalid project ID or running on server');
+      logger.warn('Clarity: Invalid project ID or running on server');
       return;
     }
 
@@ -51,13 +54,13 @@ class ClarityService {
             t=l.createElement(r);t.async=1;t.src="https://www.clarity.ms/tag/"+i;
             y=l.getElementsByTagName(r)[0];y.parentNode.insertBefore(t,y);
           } catch(e) {
-            console.warn('Clarity initialization error:', e);
+            logger.warn('Clarity initialization error:', e);
           }
         })(window, document, "clarity", "script", "${projectId}");
       `;
       
       script.onerror = () => {
-        console.warn('Failed to load Clarity script');
+        logger.warn('Failed to load Clarity script');
       };
       
       document.head.appendChild(script);
@@ -68,7 +71,7 @@ class ClarityService {
         window.clarity('start', { content: true, cookies: false }, projectId);
       }
     } catch (error) {
-      console.warn('Clarity: Failed to initialize', error);
+      logger.warn('Clarity: Failed to initialize', error);
     }
   }
 
@@ -82,7 +85,7 @@ class ClarityService {
     try {
       window.clarity('event', eventName);
     } catch (error) {
-      console.warn('Clarity: Failed to track event', eventName, error);
+      logger.warn('Clarity: Failed to track event', eventName, error);
     }
   }
 
@@ -97,7 +100,7 @@ class ClarityService {
     try {
       window.clarity('set', key, value);
     } catch (error) {
-      console.warn('Clarity: Failed to set property', key, error);
+      logger.warn('Clarity: Failed to set property', key, error);
     }
   }
 
@@ -113,7 +116,7 @@ class ClarityService {
     try {
       window.clarity('identify', userId, userHint, friendlyName);
     } catch (error) {
-      console.warn('Clarity: Failed to identify user', error);
+      logger.warn('Clarity: Failed to identify user', error);
     }
   }
 
@@ -129,7 +132,7 @@ class ClarityService {
         window.clarity.consent(granted);
       }
     } catch (error) {
-      console.warn('Clarity: Failed to set consent', error);
+      logger.warn('Clarity: Failed to set consent', error);
     }
   }
 

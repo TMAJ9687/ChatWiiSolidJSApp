@@ -1,9 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { auditService, AuditLogEntry, AuditLogFilter } from '../../../services/supabase/auditService';
+import { createServiceLogger } from '../../../utils/logger';
 
 interface AuditLogViewerProps {
   className?: string;
 }
+
+const logger = createServiceLogger('AuditLogViewer');
 
 export const AuditLogViewer: React.FC<AuditLogViewerProps> = ({ className = '' }) => {
   const [auditLogs, setAuditLogs] = useState<AuditLogEntry[]>([]);
@@ -31,7 +34,7 @@ export const AuditLogViewer: React.FC<AuditLogViewerProps> = ({ className = '' }
       setAuditLogs(result.entries);
       setTotalCount(result.totalCount);
     } catch (error) {
-      console.error('Failed to load audit logs:', error);
+      logger.error('Failed to load audit logs:', error);
     } finally {
       setLoading(false);
     }
@@ -64,7 +67,7 @@ export const AuditLogViewer: React.FC<AuditLogViewerProps> = ({ className = '' }
       setAuditLogs(result.entries);
       setTotalCount(result.totalCount);
     } catch (error) {
-      console.error('Failed to search audit logs:', error);
+      logger.error('Failed to search audit logs:', error);
     } finally {
       setLoading(false);
     }
@@ -100,7 +103,7 @@ export const AuditLogViewer: React.FC<AuditLogViewerProps> = ({ className = '' }
 
       setShowExportModal(false);
     } catch (error) {
-      console.error('Failed to export audit logs:', error);
+      logger.error('Failed to export audit logs:', error);
     }
   };
 

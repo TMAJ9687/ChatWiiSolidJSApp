@@ -1,5 +1,8 @@
 import { Component, createSignal, onMount, onCleanup, Show } from 'solid-js';
 import { FiX, FiZoomIn, FiZoomOut, FiRotateCw, FiDownload } from 'solid-icons/fi';
+import { createServiceLogger } from '../../../utils/logger';
+
+const logger = createServiceLogger('ImageModal');
 
 interface ImageModalProps {
   isOpen: boolean;
@@ -92,7 +95,7 @@ const ImageModal: Component<ImageModalProps> = (props) => {
       document.body.removeChild(link);
       window.URL.revokeObjectURL(url);
     } catch (error) {
-      console.error('Failed to download image:', error);
+      logger.error('Failed to download image:', error);
     }
   };
 

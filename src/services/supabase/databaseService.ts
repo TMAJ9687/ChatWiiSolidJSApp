@@ -1,5 +1,8 @@
 import { supabase } from '../../config/supabase';
 import { PostgrestError } from '@supabase/supabase-js';
+import { createServiceLogger } from '../../utils/logger';
+
+const logger = createServiceLogger('DatabaseService');
 
 export interface DatabaseTransaction {
   id: string;
@@ -112,7 +115,7 @@ class DatabaseService {
     transaction.status = 'rolled_back';
     
     // Log rollback for audit purposes
-    console.warn(`Transaction ${transactionId} rolled back`, {
+    logger.warn(`Transaction ${transactionId} rolled back`, {
       operations: transaction.operations,
       createdAt: transaction.createdAt
     });

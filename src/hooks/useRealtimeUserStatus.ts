@@ -1,6 +1,7 @@
 import { createSignal, onMount, onCleanup } from "solid-js";
 import { userStatusService, type UserStatusUpdate, type PresenceUpdate } from "../services/supabase/userStatusService";
 import type { User } from "../types/user.types";
+import { createServiceLogger } from "../utils/logger";
 
 export interface UseRealtimeUserStatusOptions {
   enableStatusUpdates?: boolean;
@@ -17,6 +18,8 @@ export interface RealtimeUserStatusState {
   lastUpdate: () => string | null;
   connectionAttempts: () => number;
 }
+
+const logger = createServiceLogger('useRealtimeUserStatus');
 
 export function useRealtimeUserStatus(
   initialUsers: User[] = [],
@@ -115,7 +118,7 @@ export function useRealtimeUserStatus(
 
   // Handle user status updates
   const handleUserStatusUpdate = (update: UserStatusUpdate) => {
-    console.log("Received user status update:", update);
+    logger.debug("Received user status update:", update);
     
     setLastUpdate(new Date().toISOString());
     setIsConnected(true);
@@ -152,7 +155,7 @@ export function useRealtimeUserStatus(
 
   // Handle presence updates
   const handlePresenceUpdate = (update: PresenceUpdate) => {
-    console.log("Received presence update:", update);
+    logger.debug("Received presence update:", update);
     
     setLastUpdate(new Date().toISOString());
     setIsConnected(true);
@@ -189,7 +192,7 @@ export function useRealtimeUserStatus(
 
   // Handle user table changes (INSERT, UPDATE, DELETE)
   const handleUserTableChange = (user: User, eventType: 'INSERT' | 'UPDATE' | 'DELETE') => {
-    console.log("User table change:", eventType, user);
+    logger.debug("User table change:", eventType, user);
     
     setLastUpdate(new Date().toISOString());
 
@@ -252,7 +255,7 @@ export function useRealtimeUserStatus(
 
   // Handle presence table changes
   const handlePresenceTableChange = (presence: any, eventType: 'INSERT' | 'UPDATE' | 'DELETE') => {
-    console.log("Presence table change:", eventType, presence);
+    logger.debug("Presence table change:", eventType, presence);
     
     setLastUpdate(new Date().toISOString());
 
@@ -304,7 +307,7 @@ export function useRealtimeUserStatus(
       setUserStatuses(statusMap);
       setLastUpdate(new Date().toISOString());
     } catch (error) {
-      console.error("Error refreshing user statuses:", error);
+      logger.error("Error refreshing user statuses:", error);
       setIsConnected(false);
       setConnectionAttempts(prev => prev + 1);
     }

@@ -1,5 +1,8 @@
 import { supabase } from "../../config/supabase";
 import type { AdminActionResult } from "../../types/admin.types";
+import { createServiceLogger } from "../../utils/logger";
+
+const logger = createServiceLogger('KickService');
 
 export interface KickNotification {
   userId: string;
@@ -77,7 +80,7 @@ class KickService {
         data: { userId, kickedAt, expiresAt }
       };
     } catch (error) {
-      console.error("Error kicking user:", error);
+      logger.error("Error kicking user:", error);
       return {
         success: false,
         message: error instanceof Error ? error.message : 'Failed to kick user'
@@ -100,10 +103,10 @@ class KickService {
         });
 
       if (error) {
-        console.error("Error broadcasting kick notification:", error);
+        logger.error("Error broadcasting kick notification:", error);
       }
     } catch (error) {
-      console.error("Error broadcasting kick notification:", error);
+      logger.error("Error broadcasting kick notification:", error);
     }
   }
 
@@ -127,12 +130,12 @@ class KickService {
         .upsert(kickData, { onConflict: 'user_id' });
 
       if (error) {
-        console.warn("Error storing kick status:", error);
+        logger.warn("Error storing kick status:", error);
         // Store in memory as fallback
         this.storeKickStatusInMemory(userId, status);
       }
     } catch (error) {
-      console.warn("Error storing kick status:", error);
+      logger.warn("Error storing kick status:", error);
       this.storeKickStatusInMemory(userId, status);
     }
   }
@@ -186,7 +189,7 @@ class KickService {
 
       return null;
     } catch (error) {
-      console.error("Error getting kick status:", error);
+      logger.error("Error getting kick status:", error);
       return null;
     }
   }
@@ -217,7 +220,7 @@ class KickService {
           .eq("id", userId);
       }
     } catch (error) {
-      console.error("Error clearing kick status:", error);
+      logger.error("Error clearing kick status:", error);
     }
   }
 
@@ -236,7 +239,7 @@ class KickService {
     if (delay > 0) {
       setTimeout(async () => {
         await this.clearKickStatus(userId);
-        console.log(`Kick status expired for user ${userId}`);
+        logger.debug(`Kick status expired for user ${userId}`);
       }, delay);
     }
   }
@@ -286,7 +289,7 @@ class KickService {
         .eq("is_kicked", true);
 
       if (error) {
-        console.error("Error getting kicked users:", error);
+        logger.error("Error getting kicked users:", error);
         return [];
       }
 
@@ -310,7 +313,7 @@ class KickService {
 
       return activeKicks;
     } catch (error) {
-      console.error("Error getting kicked users:", error);
+      logger.error("Error getting kicked users:", error);
       return [];
     }
   }
@@ -332,10 +335,10 @@ class KickService {
           await this.clearKickStatus(kick.user_id);
         }
         
-        console.log(`Cleaned up ${expiredKicks.length} expired kicks`);
+        logger.debug(`Cleaned up ${expiredKicks.length} expired kicks`);
       }
     } catch (error) {
-      console.error("Error cleaning up expired kicks:", error);
+      logger.error("Error cleaning up expired kicks:", error);
     }
   }
 }

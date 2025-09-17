@@ -2,6 +2,9 @@ import { createSignal, For, Show, onMount, onCleanup } from 'solid-js';
 import { FiSmile, FiPlus } from 'solid-icons/fi';
 import EmojiPicker from './EmojiPicker';
 import { reactionService } from '../../../services/supabase';
+import { createServiceLogger } from '../../../utils/logger';
+
+const logger = createServiceLogger('ReactionPicker');
 
 interface ReactionPickerProps {
   messageId: string;
@@ -29,7 +32,7 @@ export default function ReactionPicker(props: ReactionPickerProps) {
       props.onReactionAdded?.(emoji);
       setShowQuickReactions(false);
     } catch (error) {
-      console.error('Error adding quick reaction:', error);
+      logger.error('Error adding quick reaction:', error);
     } finally {
       setIsReacting(false);
     }
@@ -45,7 +48,7 @@ export default function ReactionPicker(props: ReactionPickerProps) {
       setShowEmojiPicker(false);
       setShowQuickReactions(false);
     } catch (error) {
-      console.error('Error adding emoji reaction:', error);
+      logger.error('Error adding emoji reaction:', error);
     } finally {
       setIsReacting(false);
     }

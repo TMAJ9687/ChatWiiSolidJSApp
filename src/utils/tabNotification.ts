@@ -1,3 +1,7 @@
+import { createServiceLogger } from './logger';
+
+const logger = createServiceLogger('TabNotification');
+
 /**
  * Simple utility to add browser tab notifications without breaking existing functionality
  * This only manages the page title, doesn't interfere with inbox counters or other features
@@ -14,7 +18,7 @@ class TabNotification {
     // Get the actual current title from the document (set by SEOHead component)
     // Only fall back to 'ChatWii' if no title is set at all
     this.originalTitle = document.title || 'ChatWii';
-    console.log('TabNotification init - captured title:', this.originalTitle);
+    logger.debug('TabNotification init - captured title:', this.originalTitle);
   }
 
   /**

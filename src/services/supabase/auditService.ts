@@ -1,5 +1,8 @@
 import { supabase } from '../../config/supabase';
 import { databaseService } from './databaseService';
+import { createServiceLogger } from '../../utils/logger';
+
+const logger = createServiceLogger('AuditService');
 
 export interface AuditLogEntry {
   id: string;
@@ -63,11 +66,11 @@ class AuditService {
         .insert(auditEntry);
 
       if (error) {
-        console.error('Failed to log audit entry:', error);
+        logger.error('Failed to log audit entry:', error);
         // Don't throw error to avoid breaking the main operation
       }
     } catch (error) {
-      console.error('Audit logging error:', error);
+      logger.error('Audit logging error:', error);
       // Audit logging should not break main functionality
     }
   }
@@ -111,7 +114,7 @@ class AuditService {
       await databaseService.commitTransaction(transactionId);
     } catch (error) {
       await databaseService.rollbackTransaction(transactionId);
-      console.error('Bulk audit logging failed:', error);
+      logger.error('Bulk audit logging failed:', error);
     }
   }
 

@@ -1,6 +1,9 @@
 import { supabase } from "../../config/supabase";
 import { presenceService } from "./presenceService";
 import type { User } from "../../types/user.types";
+import { createServiceLogger } from "../../utils/logger";
+
+const logger = createServiceLogger('EnhancedCleanupService');
 
 /**
  * Enhanced cleanup service that handles complete user removal for standard users
@@ -15,14 +18,14 @@ class EnhancedCleanupService {
    */
   async cleanupUser(userId: string, userRole?: string): Promise<void> {
     try {
-      console.log(`Starting cleanup for user ${userId} with role ${userRole}`);
+      logger.debug(`Starting cleanup for user ${userId} with role ${userRole}`);
 
       // Always set user offline in presence first
       await presenceService.setUserOffline(userId);
 
       // For VIP and Admin users, only set offline - DO NOT DELETE
       if (userRole === 'vip' || userRole === 'admin') {
-        console.log(`User ${userId} is ${userRole} - only setting offline, preserving account`);
+        logger.debug(`User ${userId} is ${userRole} - only setting offline, preserving account`);
         
         // Update users table to mark offline but preserve account
         await supabase
@@ -37,7 +40,7 @@ class EnhancedCleanupService {
       }
 
       // For standard users, perform complete cleanup
-      console.log(`User ${userId} is standard - performing complete cleanup`);
+      logger.debug(`User ${userId} is standard - performing complete cleanup`);
 
       // Step 1: Delete from presence table (already done by presenceService.setUserOffline)
       
@@ -51,16 +54,16 @@ class EnhancedCleanupService {
         .eq("id", userId);
 
       if (userDeleteError) {
-        console.error("Error deleting user from users table:", userDeleteError);
+        logger.error("Error deleting user from users table:", userDeleteError);
       }
 
       // Note: Auth user deletion skipped - requires service role key
       // Standard users are temporary anyway, and database cleanup is sufficient
       // Auth records will be cleaned up separately by admin if needed
 
-      console.log(`Complete cleanup finished for user ${userId}`);
+      logger.debug(`Complete cleanup finished for user ${userId}`);
     } catch (error) {
-      console.error("Error during user cleanup:", error);
+      logger.error("Error during user cleanup:", error);
       // Don't throw - we want to attempt cleanup even if some parts fail
     }
   }
@@ -123,7 +126,7 @@ class EnhancedCleanupService {
     }
 
     const handleImmediateCleanup = (event?: Event) => {
-      console.log("Browser event triggered - initiating user cleanup");
+      logger.debug("Browser event triggered - initiating user cleanup");
       
       // Use sendBeacon for reliable cleanup
       if (navigator.sendBeacon) {
@@ -153,12 +156,12 @@ class EnhancedCleanupService {
         // Only cleanup on actual tab close/browser close via beforeunload/unload events
         if (user.role === 'standard') {
           // Just update last_seen timestamp, don't remove user
-          console.log('User tabbed away - updating activity but keeping online');
+          logger.debug('User tabbed away - updating activity but keeping online');
         }
       } else {
         // User came back to tab - update activity
         if (user.role === 'standard') {
-          console.log('User returned to tab - updating activity');
+          logger.debug('User returned to tab - updating activity');
         }
       }
     };
@@ -216,7 +219,7 @@ class EnhancedCleanupService {
         .lt("last_seen", fiveMinutesAgo);
 
       if (error) {
-        console.error("Error finding stale users:", error);
+        logger.error("Error finding stale users:", error);
         return 0;
       }
 
@@ -224,7 +227,7 @@ class EnhancedCleanupService {
         return 0;
       }
 
-      console.log(`Found ${staleUsers.length} stale standard users to cleanup`);
+      logger.debug(`Found ${staleUsers.length} stale standard users to cleanup`);
 
       // Cleanup each stale standard user
       const cleanupPromises = staleUsers.map(user => 
@@ -235,7 +238,7 @@ class EnhancedCleanupService {
       
       return staleUsers.length;
     } catch (error) {
-      console.error("Error during stale user cleanup:", error);
+      logger.error("Error during stale user cleanup:", error);
       return 0;
     }
   }
@@ -247,7 +250,7 @@ class EnhancedCleanupService {
     return setInterval(async () => {
       const cleanedCount = await this.cleanupStaleStandardUsers();
       if (cleanedCount > 0) {
-        console.log(`Automatic cleanup: removed ${cleanedCount} stale standard users`);
+        logger.debug(`Automatic cleanup: removed ${cleanedCount} stale standard users`);
       }
     }, 2 * 60 * 1000); // Every 2 minutes
   }

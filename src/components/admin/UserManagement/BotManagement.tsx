@@ -2,6 +2,9 @@ import React, { useState, useEffect } from 'react';
 import { Bot, BotCreateRequest, BotBehaviorSettings } from '../../../types/bot.types';
 import { botService } from '../../../services/supabase/botService';
 import { supabase } from '../../../config/supabase';
+import { createServiceLogger } from '../../../utils/logger';
+
+const logger = createServiceLogger('BotManagement');
 
 export const BotManagement: React.FC = () => {
   const [bots, setBots] = useState<Bot[]>([]);
@@ -50,7 +53,7 @@ export const BotManagement: React.FC = () => {
       setBots(botsResult.bots);
       setStats(statsResult);
     } catch (err) {
-      console.error('Error loading bots:', err);
+      logger.error('Error loading bots:', err);
       setError('Failed to load bots');
     } finally {
       setLoading(false);
@@ -65,7 +68,7 @@ export const BotManagement: React.FC = () => {
         setCurrentAdminId(user.id);
       }
     } catch (err) {
-      console.error('Error getting current admin ID:', err);
+      logger.error('Error getting current admin ID:', err);
     }
   };
 
@@ -122,7 +125,7 @@ export const BotManagement: React.FC = () => {
       resetForm();
       await loadBots();
     } catch (err) {
-      console.error('Error submitting bot form:', err);
+      logger.error('Error submitting bot form:', err);
       setError('An error occurred while saving the bot');
     }
   };
@@ -178,7 +181,7 @@ export const BotManagement: React.FC = () => {
       
       await loadBots();
     } catch (err) {
-      console.error('Error deleting bot:', err);
+      logger.error('Error deleting bot:', err);
       setError('Failed to delete bot');
     }
   };
@@ -194,7 +197,7 @@ export const BotManagement: React.FC = () => {
       
       await loadBots();
     } catch (err) {
-      console.error('Error toggling bot status:', err);
+      logger.error('Error toggling bot status:', err);
       setError('Failed to toggle bot status');
     }
   };

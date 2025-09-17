@@ -1,6 +1,9 @@
 import { createSignal, createEffect, onCleanup, Show } from 'solid-js';
 import { FiPlay, FiPause, FiDownload, FiMic } from 'solid-icons/fi';
 import { voiceService } from '../../../services/supabase';
+import { createServiceLogger } from '../../../utils/logger';
+
+const logger = createServiceLogger('VoicePlayer');
 
 // Define VoiceData type to match what's used in the component
 type VoiceData = {
@@ -149,7 +152,7 @@ export default function VoicePlayer(props: VoicePlayerProps) {
       link.click();
       document.body.removeChild(link);
     } catch (error) {
-      console.error('Failed to download voice message:', error);
+      logger.error('Failed to download voice message:', error);
     }
   };
 

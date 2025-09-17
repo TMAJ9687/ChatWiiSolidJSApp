@@ -1,5 +1,8 @@
 import { supabase } from "../../config/supabase";
 import type { RealtimeChannel } from "@supabase/supabase-js";
+import { createServiceLogger } from "../../utils/logger";
+
+const logger = createServiceLogger('TypingService');
 
 interface TypingIndicator {
   userId: string;
@@ -44,7 +47,7 @@ class TypingService {
       
       this.typingTimeouts.set(userId, timeout);
     } catch (error) {
-      console.error('Error starting typing indicator:', error);
+      logger.error('Error starting typing indicator:', error);
     }
   }
 
@@ -74,7 +77,7 @@ class TypingService {
       // Clear timeout
       this.clearTypingTimeout(userId);
     } catch (error) {
-      console.error('Error stopping typing indicator:', error);
+      logger.error('Error stopping typing indicator:', error);
     }
   }
 

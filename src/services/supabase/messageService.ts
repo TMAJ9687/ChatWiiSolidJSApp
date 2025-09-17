@@ -2,6 +2,9 @@ import { supabase } from "../../config/supabase";
 import type { Message } from "../../types/message.types";
 import type { Database } from "../../types/database.types";
 import type { RealtimeChannel } from "@supabase/supabase-js";
+import { createServiceLogger } from "../../utils/logger";
+
+const logger = createServiceLogger('MessageService');
 
 type SupabaseMessage = Database['public']['Tables']['messages']['Row'];
 type SupabaseMessageInsert = Database['public']['Tables']['messages']['Insert'];
@@ -49,7 +52,7 @@ class MessageService {
         throw error;
       }
     } catch (error) {
-      console.error("Error sending message:", error);
+      logger.error("Error sending message:", error);
       throw new Error("Failed to send message");
     }
   }
@@ -101,13 +104,13 @@ class MessageService {
         .order("created_at", { ascending: true });
 
       if (error) {
-        console.error("Error fetching messages:", error);
+        logger.error("Error fetching messages:", error);
         return [];
       }
 
       return (data || []).map((msg) => this.convertSupabaseMessage(msg));
     } catch (error) {
-      console.error("Error fetching conversation messages:", error);
+      logger.error("Error fetching conversation messages:", error);
       return [];
     }
   }
@@ -129,7 +132,7 @@ class MessageService {
         throw error;
       }
     } catch (error) {
-      console.error("Error marking messages as read:", error);
+      logger.error("Error marking messages as read:", error);
     }
   }
 
@@ -143,13 +146,13 @@ class MessageService {
         .eq("read", false);
 
       if (error) {
-        console.error('Error getting unread count:', error);
+        logger.error('Error getting unread count:', error);
         return 0;
       }
 
       return count || 0;
     } catch (error) {
-      console.error('Error getting unread count:', error);
+      logger.error('Error getting unread count:', error);
       return 0;
     }
   }
@@ -165,13 +168,13 @@ class MessageService {
         .eq("read", false);
 
       if (error) {
-        console.error('Error getting unread count from user:', error);
+        logger.error('Error getting unread count from user:', error);
         return 0;
       }
 
       return count || 0;
     } catch (error) {
-      console.error('Error getting unread count from user:', error);
+      logger.error('Error getting unread count from user:', error);
       return 0;
     }
   }
@@ -189,7 +192,7 @@ class MessageService {
         .limit(limitCount);
 
       if (error) {
-        console.error('Error getting recent messages:', error);
+        logger.error('Error getting recent messages:', error);
         return [];
       }
 
@@ -198,7 +201,7 @@ class MessageService {
         .map((msg) => this.convertSupabaseMessage(msg))
         .sort((a, b) => a.createdAt - b.createdAt);
     } catch (error) {
-      console.error('Error getting recent messages:', error);
+      logger.error('Error getting recent messages:', error);
       return [];
     }
   }

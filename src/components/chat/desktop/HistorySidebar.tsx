@@ -3,6 +3,9 @@ import { FiX, FiClock } from 'solid-icons/fi';
 import type { Message } from '../../../types/message.types';
 import type { User } from '../../../types/user.types';
 import { conversationService, type Conversation } from '../../../services/supabase';
+import { createServiceLogger } from '../../../utils/logger';
+
+const logger = createServiceLogger('HistorySidebar');
 
 interface HistorySidebarProps {
   isOpen: boolean;
@@ -98,7 +101,7 @@ const HistorySidebar: Component<HistorySidebarProps> = (props) => {
       items.sort((a, b) => b.lastMessage.createdAt - a.lastMessage.createdAt);
       setHistoryItems(items);
     } catch (error) {
-      console.error('Error loading history:', error);
+      logger.error('Error loading history:', error);
       setHistoryItems([]);
     }
   });

@@ -14,6 +14,9 @@ import { detectCountry } from "../utils/countryDetection";
 import SEOHead from "../components/seo/SEOHead";
 import { generatePageStructuredData } from "../utils/structuredData";
 import { useAnalytics } from "../hooks/useAnalytics";
+import { createServiceLogger } from "../utils/logger";
+
+const logger = createServiceLogger('Landing');
 
 const Landing: Component = () => {
   const navigate = useNavigate();
@@ -212,7 +215,7 @@ const Landing: Component = () => {
       // Navigate to chat
       navigate("/chat");
     } catch (error) {
-      console.error("Failed to start chat:", error);
+      logger.error("Failed to start chat:", error);
       setNicknameError("Failed to connect. Please try again.");
       
       // Track failed chat attempt
