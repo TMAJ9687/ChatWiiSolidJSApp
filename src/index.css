@@ -23,9 +23,20 @@
     opacity: 1;
   }
 
+  /* Specific fix for nickname input placeholder */
+  #nickname-input::placeholder {
+    color: #6B7280; /* Ensure specific contrast compliance */
+    opacity: 1;
+  }
+
   .dark input::placeholder,
   .dark textarea::placeholder {
     color: #9CA3AF; /* Appropriate contrast in dark mode */
+    opacity: 1;
+  }
+
+  .dark #nickname-input::placeholder {
+    color: #9CA3AF; /* Dark mode specific fix */
     opacity: 1;
   }
 

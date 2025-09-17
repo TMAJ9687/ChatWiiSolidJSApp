@@ -2,8 +2,43 @@ import { defineConfig } from "vite";
 import solid from "vite-plugin-solid";
 import path from "path";
 
+// Plugin to preload critical resources
+function resourcePreloadPlugin() {
+  return {
+    name: 'resource-preload',
+    transformIndexHtml(html: string, context: any) {
+      if (context.bundle) {
+        const cssFiles = Object.keys(context.bundle).filter(file => file.endsWith('.css'));
+        const jsFiles = Object.keys(context.bundle).filter(file =>
+          file.startsWith('vendor') && file.endsWith('.js')
+        );
+
+        let preloadTags = '';
+
+        // Preload vendor JS
+        jsFiles.forEach(file => {
+          preloadTags += `\n    <link rel="modulepreload" href="/assets/${file}">`;
+        });
+
+        // Preload CSS
+        cssFiles.forEach(file => {
+          preloadTags += `\n    <link rel="preload" href="/${file}" as="style">`;
+        });
+
+        if (preloadTags) {
+          return html.replace(
+            '<title>ChatWii</title>',
+            `${preloadTags}\n    <title>ChatWii</title>`
+          );
+        }
+      }
+      return html;
+    }
+  };
+}
+
 export default defineConfig({
-  plugins: [solid()],
+  plugins: [solid(), resourcePreloadPlugin()],
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),
@@ -16,8 +51,8 @@ export default defineConfig({
     minify: 'terser',
     terserOptions: {
       compress: {
-        // Remove most console statements in production but keep error logging
-        drop_console: false,
+        // More aggressive console removal and optimization
+        drop_console: true,
         drop_debugger: true,
         pure_funcs: ['console.log', 'console.info', 'console.debug', 'console.warn', 'console.table']
       },
@@ -25,10 +60,8 @@ export default defineConfig({
     rollupOptions: {
       output: {
         manualChunks: {
-          // Vendor libraries
-          'vendor-core': ['solid-js', '@solidjs/router', '@solidjs/meta'],
-          'vendor-supabase': ['@supabase/supabase-js'],
-          'vendor-icons': ['solid-icons/fi', 'solid-icons/bi']
+          // Only split major vendor libraries to avoid over-chunking
+          vendor: ['solid-js', '@solidjs/router', '@solidjs/meta', '@supabase/supabase-js']
         }
       }
     }
