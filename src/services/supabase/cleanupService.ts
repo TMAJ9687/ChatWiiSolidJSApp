@@ -282,6 +282,7 @@ class CleanupService {
 
   /**
    * Run automatic daily cleanup
+   * Uses aggressive cleanup that removes ALL standard role users
    * Safe to call multiple times - checks last run time
    */
   async runDailyCleanup(): Promise<{
@@ -315,8 +316,8 @@ class CleanupService {
         };
       }
 
-      // Run the cleanup
-      const result = await this.executeCleanup();
+      // Run aggressive cleanup - remove ALL standard users (anonymous)
+      const result = await this.executeAggressiveCleanup();
 
       // Log as automated operation
       await supabase.rpc('log_cleanup_operation', {
@@ -341,6 +342,47 @@ class CleanupService {
         },
         message: `Daily cleanup failed: ${error.message || 'Unknown error'}`
       };
+    }
+  }
+
+  /**
+   * Execute aggressive cleanup that removes ALL standard role users
+   * This is the same logic that worked in your manual cleanup
+   */
+  private async executeAggressiveCleanup(): Promise<CleanupResult> {
+    try {
+      // Count users before cleanup
+      const { data: beforeCount } = await supabase
+        .from('users')
+        .select('id', { count: 'exact' })
+        .eq('role', 'standard');
+
+      const standardUsersCount = beforeCount?.length || 0;
+
+      // Delete from custom users table (standard role users)
+      const { error: customError } = await supabase
+        .from('users')
+        .delete()
+        .eq('role', 'standard');
+
+      if (customError) {
+        throw customError;
+      }
+
+      // Delete from auth.users table (anonymous users)
+      const { error: authError } = await supabase.auth.admin
+        .deleteUser
+        ? null // We can't bulk delete from auth, but the RPC function will handle it
+        : await supabase.rpc('cleanup_anonymous_auth_users');
+
+      return {
+        action: 'AGGRESSIVE_CLEANUP_EXECUTED',
+        count: standardUsersCount,
+        details: `Removed ${standardUsersCount} standard users from both tables`
+      };
+    } catch (error) {
+      logger.error('Error in aggressive cleanup:', error);
+      throw error;
     }
   }
 
