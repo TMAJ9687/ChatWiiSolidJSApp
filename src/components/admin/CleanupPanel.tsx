@@ -1,6 +1,7 @@
 import { createSignal, createEffect, onMount } from "solid-js";
 import { cleanupService, type CleanupStats, type CleanupResult, type CleanupLog } from "../../services/supabase/cleanupService";
 import { manualCleanupService } from "../../services/supabase/manualCleanupService";
+import { dailyCleanupTrigger } from "../../services/supabase/dailyCleanupTrigger";
 import { createServiceLogger } from "../../utils/logger";
 
 const logger = createServiceLogger('CleanupPanel');
@@ -111,6 +112,32 @@ export function CleanupPanel() {
   };
 
   const clearMessage = () => setMessage(null);
+
+  // Daily cleanup function
+  const runDailyCleanup = async () => {
+    try {
+      setIsLoading(true);
+      const result = await dailyCleanupTrigger.checkAndRunCleanup();
+
+      if (result.executed) {
+        setMessage({
+          type: 'success',
+          text: `Daily cleanup completed: ${result.usersDeleted || 0} anonymous users removed`
+        });
+      } else {
+        setMessage({
+          type: 'info',
+          text: result.message
+        });
+      }
+
+      await loadData();
+    } catch (error) {
+      setMessage({ type: 'error', text: 'Daily cleanup failed' });
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   // Enhanced cleanup test functions
   const testEnhancedCleanup = async () => {
@@ -511,6 +538,17 @@ export function CleanupPanel() {
               {cleanupInProgress() ? '🔄 Cleaning...' : '🗑️ Clean Offline Standard Users'}
             </button>
             <p class="text-xs text-gray-600">Permanently delete offline standard users and their data</p>
+          </div>
+
+          <div class="space-y-2">
+            <button
+              onClick={runDailyCleanup}
+              disabled={isLoading()}
+              class="w-full px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 disabled:opacity-50"
+            >
+              📅 Run Daily Cleanup
+            </button>
+            <p class="text-xs text-gray-600">Run daily cleanup for anonymous users offline 1+ hours</p>
           </div>
 
           <div class="space-y-2">

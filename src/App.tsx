@@ -1,6 +1,7 @@
 import { Component, onMount, onCleanup, lazy } from "solid-js";
 import { Router, Route } from "@solidjs/router";
 import Landing from "./pages/Landing";
+import { dailyCleanupTrigger } from "./services/supabase/dailyCleanupTrigger";
 
 // Lazy load all non-critical pages including chat
 const Chat = lazy(() => import("./pages/Chat"));
@@ -23,6 +24,13 @@ const App: Component = () => {
       cleanupInterval = enhancedCleanupService.startAutomaticCleanup();
     } catch (error) {
       // Cleanup service failed to start - continue silently
+    }
+
+    // Start daily cleanup trigger for anonymous users (1+ hour offline)
+    try {
+      dailyCleanupTrigger.startPeriodicCleanup();
+    } catch (error) {
+      // Daily cleanup failed to start - continue silently
     }
 
     // Load debug utilities for console testing (development only)

@@ -281,6 +281,70 @@ class CleanupService {
   }
 
   /**
+   * Run automatic daily cleanup
+   * Safe to call multiple times - checks last run time
+   */
+  async runDailyCleanup(): Promise<{
+    success: boolean;
+    result: CleanupResult;
+    message: string;
+  }> {
+    try {
+      // Check if cleanup already ran today
+      const today = new Date().toISOString().split('T')[0];
+      const { data: recentRuns, error: checkError } = await supabase
+        .from('cleanup_logs')
+        .select('id')
+        .gte('executed_at', today + 'T00:00:00.000Z')
+        .eq('operation', 'automated_daily_cleanup')
+        .limit(1);
+
+      if (checkError) {
+        throw checkError;
+      }
+
+      if (recentRuns && recentRuns.length > 0) {
+        return {
+          success: true,
+          result: {
+            action: 'ALREADY_RAN_TODAY',
+            count: 0,
+            details: 'Daily cleanup already completed today'
+          },
+          message: 'Daily cleanup already completed today'
+        };
+      }
+
+      // Run the cleanup
+      const result = await this.executeCleanup();
+
+      // Log as automated operation
+      await supabase.rpc('log_cleanup_operation', {
+        op: 'automated_daily_cleanup',
+        users_count: result.count,
+        details_text: `Daily automated cleanup: ${result.details}`
+      });
+
+      return {
+        success: true,
+        result,
+        message: `Daily cleanup completed: ${result.count} users removed`
+      };
+    } catch (error) {
+      logger.error('Error in daily cleanup:', error);
+      return {
+        success: false,
+        result: {
+          action: 'ERROR',
+          count: 0,
+          details: `Error: ${error.message || 'Unknown error'}`
+        },
+        message: `Daily cleanup failed: ${error.message || 'Unknown error'}`
+      };
+    }
+  }
+
+  /**
    * Enable automatic cleanup (sets up recurring job)
    * Note: Uses simplified function without pg_cron dependency
    */
