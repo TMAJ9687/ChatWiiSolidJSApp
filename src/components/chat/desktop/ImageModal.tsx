@@ -22,12 +22,13 @@ const ImageModal: Component<ImageModalProps> = (props) => {
   let modalRef: HTMLDivElement | undefined;
   let imageRef: HTMLImageElement | undefined;
 
-  // Reset values when modal opens
+  // Reset values when modal opens and calculate fit-to-screen scale
   const resetImageState = () => {
-    setScale(1);
     setRotation(0);
     setPosition({ x: 0, y: 0 });
     setImageLoaded(false);
+    // Start with scale 1 (full size), user can zoom in/out as needed
+    setScale(1);
   };
 
   // Handle keyboard events
@@ -231,7 +232,7 @@ const ImageModal: Component<ImageModalProps> = (props) => {
             ref={imageRef}
             src={props.imageUrl}
             alt={props.imageAlt || 'Full size image'}
-            class={`max-w-none transition-all duration-200 ease-out select-none ${
+            class={`max-w-[95vw] max-h-[90vh] w-auto h-auto object-contain transition-all duration-200 ease-out select-none ${
               isDragging() ? 'cursor-grabbing' : scale() > 1 ? 'cursor-grab' : 'cursor-default'
             }`}
             style={{

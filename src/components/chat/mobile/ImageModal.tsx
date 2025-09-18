@@ -231,7 +231,7 @@ const ImageModal: Component<ImageModalProps> = (props) => {
             ref={imageRef}
             src={props.imageUrl}
             alt={props.imageAlt || 'Full size image'}
-            class={`max-w-[90vw] max-h-[80vh] w-auto h-auto transition-all duration-200 ease-out select-none ${
+            class={`max-w-[95vw] max-h-[90vh] w-auto h-auto object-contain transition-all duration-200 ease-out select-none ${
               isDragging() ? 'cursor-grabbing' : scale() > 1 ? 'cursor-grab' : 'cursor-default'
             }`}
             style={{

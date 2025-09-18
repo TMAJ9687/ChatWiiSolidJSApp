@@ -32,7 +32,7 @@ export default function BlurredImageMessage(props: BlurredImageMessageProps) {
       {/* Mobile optimized container with inline styles */}
       <div
         class="relative rounded-lg overflow-hidden bg-gray-100 dark:bg-gray-700 shrink-0"
-        style="width: 120px !important; height: 120px !important; max-width: 40vw !important; max-height: 40vw !important; min-width: 0 !important;"
+        style="width: 138px !important; height: 138px !important; max-width: 45vw !important; max-height: 45vw !important; min-width: 0 !important;"
       >
         {/* Image */}
         <img

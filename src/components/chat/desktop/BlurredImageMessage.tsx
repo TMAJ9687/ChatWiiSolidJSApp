@@ -29,8 +29,8 @@ export default function BlurredImageMessage(props: BlurredImageMessageProps) {
 
   return (
     <div class={`relative ${props.className || ''}`}>
-      {/* 300x300 container */}
-      <div class="relative w-[150px] h-[150px] rounded-lg overflow-hidden bg-gray-100 dark:bg-gray-700">
+      {/* 172x172 container (15% bigger than 150px) */}
+      <div class="relative w-[172px] h-[172px] rounded-lg overflow-hidden bg-gray-100 dark:bg-gray-700">
         {/* Image */}
         <img
           src={props.imageUrl}
