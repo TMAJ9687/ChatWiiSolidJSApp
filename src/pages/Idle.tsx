@@ -1,6 +1,7 @@
 import { Component, createSignal, onMount, onCleanup } from "solid-js";
 import { useNavigate, useLocation } from "@solidjs/router";
 import { authService, presenceService } from "../services/supabase";
+import { supabase } from "../config/supabase";
 import SEOHead from "../components/seo/SEOHead";
 
 const Idle: Component = () => {
@@ -38,11 +39,28 @@ const Idle: Component = () => {
     // User wants to continue with same session
     const userId = location.state?.userId;
     if (userId) {
+      try {
+        // Try to refresh the session first to avoid 403 errors
+        const { data, error } = await supabase.auth.refreshSession();
+        if (error) {
+          // Session can't be refreshed, force new session
+          await handleNewSession();
+          return;
+        }
+      } catch (error) {
+        // Refresh failed, force new session
+        await handleNewSession();
+        return;
+      }
+
       // Re-establish presence
       const user = await authService.getCurrentUser();
       if (user) {
         await presenceService.setUserOnline(user);
         navigate("/chat");
+      } else {
+        // If we still can't get user after refresh, force new session
+        await handleNewSession();
       }
     }
   };
