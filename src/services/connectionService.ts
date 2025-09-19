@@ -51,22 +51,10 @@ class ConnectionService {
     this.startHealthCheck();
   }
 
-  // Start periodic health check instead of relying on realtime events
+  // DISABLED: Health check was causing infinite auth loops when sessions expire
   private startHealthCheck() {
-    // Check connection health every 30 seconds
-    setInterval(async () => {
-      if (this.isOnline() && this.connectionStatus() === 'connected') {
-        try {
-          // Simple health check - try to get current user
-          await supabase.auth.getUser();
-        } catch (error: any) {
-          logger.warn('Health check failed:', error);
-          if (this.isNetworkError(error)) {
-            this.handleConnectionIssue();
-          }
-        }
-      }
-    }, 30000);
+    // Health checks disabled to prevent 403 auth cascades
+    logger.debug('Health checks disabled to prevent auth loops');
   }
 
   // Handle connection issues
@@ -85,37 +73,12 @@ class ConnectionService {
     }
   }
 
-  // Attempt to reconnect to Supabase
+  // DISABLED: Reconnection was causing auth spam loops
   private async attemptReconnection() {
-    if (this.reconnectAttempts >= this.maxReconnectAttempts) {
-      logger.error('Max reconnection attempts reached. Please refresh the page.');
-      this.setConnectionStatus('disconnected');
-      return;
-    }
-
-    this.reconnectAttempts++;
-    // Attempting reconnection
-
-    try {
-      // Test connection with auth check (simpler than database query)
-      await supabase.auth.getUser();
-      
-      // Reconnection successful
-      this.setConnectionStatus('connected');
-      this.reconnectAttempts = 0;
-      return;
-    } catch (error) {
-      logger.warn('Reconnection failed:', error);
-    }
-
-    // Schedule next retry with exponential backoff
-    const delay = Math.min(1000 * Math.pow(2, this.reconnectAttempts - 1), 30000);
-    
-    this.reconnectTimeout = setTimeout(() => {
-      if (this.isOnline()) {
-        this.attemptReconnection();
-      }
-    }, delay);
+    // Reconnection disabled to prevent auth loops
+    logger.debug('Reconnection disabled to prevent auth spam');
+    this.setConnectionStatus('connected'); // Assume connected to prevent loops
+    this.reconnectAttempts = 0;
   }
 
   // Public methods
@@ -140,10 +103,10 @@ class ConnectionService {
     }
   }
 
-  // Execute request with connection handling
+  // Execute request with LIMITED retries to prevent auth spam
   async executeWithRetry<T>(
     request: () => Promise<T>,
-    maxRetries: number = 3
+    maxRetries: number = 1 // REDUCED from 3 to prevent spam
   ): Promise<T> {
     let lastError: any;
 
@@ -153,24 +116,27 @@ class ConnectionService {
       } catch (error: any) {
         lastError = error;
 
-        // Check if it's a network-related error
-        if (this.isNetworkError(error)) {
+        // DISABLED: Check for auth errors and stop immediately
+        if (error.message?.includes('403') ||
+            error.message?.includes('Forbidden') ||
+            error.status === 403) {
+          logger.warn('Auth error detected, stopping retries to prevent spam');
+          throw error;
+        }
+
+        // Check if it's a network-related error (not auth)
+        if (this.isNetworkError(error) && !error.message?.includes('403')) {
           logger.warn(`Network error detected, attempt ${i + 1}/${maxRetries + 1}:`, error.message);
-          
+
           if (i < maxRetries) {
             // Wait before retry with exponential backoff
-            const delay = Math.min(1000 * Math.pow(2, i), 5000);
+            const delay = Math.min(1000 * Math.pow(2, i), 2000); // Reduced max delay
             await new Promise(resolve => setTimeout(resolve, delay));
-            
-            // Trigger reconnection if needed
-            if (this.connectionStatus() === 'connected') {
-              this.handleConnectionIssue();
-            }
             continue;
           }
         }
 
-        // Not a network error or max retries reached
+        // Not a retryable error or max retries reached
         throw error;
       }
     }
