@@ -157,28 +157,47 @@ class AuthService {
     throw lastError;
   }
 
-  // Get current user profile with connection service retry logic
+  // Get current user profile with enhanced error handling for 403 errors
   async getCurrentUser(): Promise<User | null> {
     try {
-      // Try connection service first, fallback to basic retry
-      let userData;
-      let userProfile;
+      // Check session validity first
+      const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
 
+      if (sessionError || !sessionData.session) {
+        logger.warn("No valid session found, user needs to re-authenticate");
+        this.currentUser = null;
+        return null;
+      }
+
+      // Try to get user data
+      let userData;
       try {
         userData = await connectionService.executeWithRetry(
           () => supabase.auth.getUser()
         );
-      } catch (connectionError) {
+      } catch (connectionError: any) {
+        // Check for 403 Forbidden error
+        if (connectionError.message?.includes('403') ||
+            connectionError.status === 403 ||
+            connectionError.message?.includes('Forbidden')) {
+          logger.warn("403 Forbidden error - token expired, clearing session");
+          this.currentUser = null;
+          return null;
+        }
         logger.warn("Connection service failed, using basic retry:", connectionError);
         userData = await this.retryRequest(() => supabase.auth.getUser());
       }
 
       const { data: { user } } = userData;
-      if (!user) return null;
+      if (!user) {
+        this.currentUser = null;
+        return null;
+      }
 
       this.currentUser = user;
 
-      // Get user profile from database
+      // Get user profile from database with 403 error handling
+      let userProfile;
       try {
         const result = await connectionService.executeWithRetry(
           () => supabase
@@ -188,7 +207,16 @@ class AuthService {
             .single()
         );
         userProfile = result;
-      } catch (connectionError) {
+      } catch (connectionError: any) {
+        // Check for 403/406 errors
+        if (connectionError.message?.includes('403') ||
+            connectionError.message?.includes('406') ||
+            connectionError.status === 403 ||
+            connectionError.status === 406) {
+          logger.warn("Database access forbidden - session expired, clearing user");
+          this.currentUser = null;
+          return null;
+        }
         logger.warn("Connection service failed for profile, using basic retry:", connectionError);
         userProfile = await this.retryRequest(
           () => supabase
@@ -201,8 +229,22 @@ class AuthService {
 
       const { data: profile, error } = userProfile;
 
-      if (error || !profile) {
+      if (error) {
+        // Check for auth-related errors
+        if (error.message?.includes('403') ||
+            error.message?.includes('406') ||
+            error.message?.includes('Forbidden') ||
+            error.message?.includes('Not Acceptable')) {
+          logger.warn("Database query failed with auth error, clearing session:", error.message);
+          this.currentUser = null;
+          return null;
+        }
         logger.warn("User profile not found or error:", error);
+        return null;
+      }
+
+      if (!profile) {
+        logger.warn("User profile not found");
         return null;
       }
 
@@ -217,15 +259,27 @@ class AuthService {
       return this.convertSupabaseUser(profile);
     } catch (error: any) {
       logger.error("Error getting current user:", error);
-      
-      // Graceful error handling
-      if (error.message?.includes('Failed to fetch') || 
-          error.message?.includes('CORS') || 
+
+      // Enhanced error handling for auth errors
+      if (error.message?.includes('403') ||
+          error.message?.includes('406') ||
+          error.message?.includes('Forbidden') ||
+          error.message?.includes('Not Acceptable') ||
+          error.status === 403 ||
+          error.status === 406) {
+        logger.warn("Authentication error detected, clearing session");
+        this.currentUser = null;
+        return null;
+      }
+
+      // Graceful error handling for network issues
+      if (error.message?.includes('Failed to fetch') ||
+          error.message?.includes('CORS') ||
           error.message?.includes('502')) {
         logger.warn("Network connectivity issue. Session may be stale.");
         this.currentUser = null;
       }
-      
+
       return null;
     }
   }

@@ -85,6 +85,7 @@ const Chat: Component = () => {
     
     const user = await authService.getCurrentUser();
     if (!user) {
+      // If user is not authenticated, redirect to landing page
       navigate("/");
       return;
     }

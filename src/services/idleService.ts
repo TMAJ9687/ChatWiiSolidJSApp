@@ -6,7 +6,7 @@ import { createServiceLogger } from "../utils/logger";
 const logger = createServiceLogger('IdleService');
 
 class IdleService {
-  private idleTimeout: number = 30 * 60 * 1000; // 30 minutes
+  private idleTimeout: number = 60 * 60 * 1000; // 1 hour (increased from 30 minutes)
   private idleTimer: NodeJS.Timeout | null = null;
   private lastActivity: number = Date.now();
   private userId: string | null = null;
@@ -71,16 +71,22 @@ class IdleService {
     }, this.idleTimeout);
   }
 
-  // Handle idle state
-  private handleIdle() {
+  // Handle idle state - direct logout instead of idle page
+  private async handleIdle() {
+    logger.info("User idle for 1 hour, automatically logging out");
+
+    try {
+      // Import auth service dynamically to avoid circular dependencies
+      const { authService } = await import("./supabase/authService");
+      await authService.signOut();
+    } catch (error) {
+      logger.error("Error during automatic logout:", error);
+      // Force navigation even if signOut fails
+    }
+
     if (this.navigate) {
-      // Navigate to idle page with current session info
-      this.navigate("/idle", {
-        state: {
-          userId: this.userId,
-          idleAt: Date.now(),
-        },
-      });
+      // Navigate directly to feedback page
+      this.navigate("/feedback");
     }
   }
 
