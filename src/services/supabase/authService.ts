@@ -234,28 +234,49 @@ class AuthService {
   async signOut() {
     if (this.currentUser) {
       try {
-        // Get current user profile to check role
-        const { data: userProfile } = await supabase
-          .from("users")
-          .select("role")
-          .eq("id", this.currentUser.id)
-          .single();
+        // Check if session is still valid before making database queries
+        const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
 
-        if (userProfile) {
-          // Use enhanced cleanup that handles VIP/Admin differently
-          const { enhancedCleanupService } = await import('./enhancedCleanupService');
-          await enhancedCleanupService.handleLogout({
-            id: this.currentUser.id,
-            role: userProfile.role
-          } as User);
+        if (!sessionError && sessionData.session) {
+          // Session is valid, proceed with role-based cleanup
+          try {
+            // Get current user profile to check role
+            const { data: userProfile } = await supabase
+              .from("users")
+              .select("role")
+              .eq("id", this.currentUser.id)
+              .single();
+
+            if (userProfile) {
+              // Use enhanced cleanup that handles VIP/Admin differently
+              const { enhancedCleanupService } = await import('./enhancedCleanupService');
+              await enhancedCleanupService.handleLogout({
+                id: this.currentUser.id,
+                role: userProfile.role
+              } as User);
+            } else {
+              // Fallback to basic offline setting
+              await presenceService.setUserOffline(this.currentUser.id);
+            }
+          } catch (dbError) {
+            logger.warn("Error during database cleanup, using basic offline:", dbError);
+            // Database query failed, use basic cleanup
+            await presenceService.setUserOffline(this.currentUser.id);
+          }
         } else {
-          // Fallback to basic offline setting
+          // Session is invalid, skip database operations and use basic cleanup
+          logger.warn("Session invalid during signout, using basic cleanup");
           await presenceService.setUserOffline(this.currentUser.id);
         }
       } catch (error) {
         logger.warn("Error during logout cleanup:", error);
         // Continue with logout even if cleanup fails
-        await presenceService.setUserOffline(this.currentUser.id);
+        try {
+          await presenceService.setUserOffline(this.currentUser.id);
+        } catch (presenceError) {
+          logger.warn("Error setting user offline:", presenceError);
+          // Even presence cleanup failed, continue with auth signout
+        }
       }
     }
 
@@ -263,10 +284,15 @@ class AuthService {
     const wasAuthenticated = !!this.currentUser;
     this.currentUser = null;
 
-    // Sign out from Supabase auth
+    // Sign out from Supabase auth only if we have a valid session
     if (wasAuthenticated) {
       try {
-        await supabase.auth.signOut();
+        const { data: sessionData } = await supabase.auth.getSession();
+        if (sessionData.session) {
+          await supabase.auth.signOut();
+        } else {
+          logger.debug("No valid session to sign out from");
+        }
       } catch (error) {
         logger.warn("Error during auth signout:", error);
         // Even if auth signout fails, we've cleared the local state
