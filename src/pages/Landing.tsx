@@ -35,13 +35,17 @@ const Landing: Component = () => {
   // UI state
   const [isValid, setIsValid] = createSignal(false);
   const [loading, setLoading] = createSignal(false);
+  const [pageReady, setPageReady] = createSignal(false);
   
   // CAPTCHA state
   const [captchaToken, setCaptchaToken] = createSignal<string | null>(null);
   const [captchaError, setCaptchaError] = createSignal("");
 
-  // Initialize page immediately, defer async operations to prevent navigation blocking
+  // Initialize page with immediate readiness signal, then enhance
   onMount(() => {
+    // Mark page as ready immediately to prevent navigation blocking
+    setPageReady(true);
+
     // Immediately track page view with defaults - don't wait for country detection
     analytics.trackPageView('landing');
     analytics.setUserProperty('page_type', 'landing');
@@ -242,12 +246,12 @@ const Landing: Component = () => {
 
   return (
     <>
-      <SEOHead 
+      <SEOHead
         title="ChatWii - Anonymous Chat Platform"
         description="Connect with people worldwide through anonymous chat. No registration required. Private, safe, and secure conversations with complete anonymity. Join thousands chatting now!"
         keywords={[
           "anonymous chat online",
-          "chat with strangers safely", 
+          "chat with strangers safely",
           "private messaging app",
           "secure anonymous chat",
           "free chat no registration",
@@ -261,8 +265,17 @@ const Landing: Component = () => {
         structuredData={generatePageStructuredData('homepage', {})}
         canonical="https://chatwii.com"
       />
-      
-      <div class="min-h-screen bg-gradient-to-b from-neutral-50 to-neutral-100 dark:from-neutral-900 dark:to-neutral-800">
+
+      {!pageReady() ? (
+        // Loading screen while page initializes
+        <div class="min-h-screen bg-gradient-to-b from-neutral-50 to-neutral-100 dark:from-neutral-900 dark:to-neutral-800 flex items-center justify-center">
+          <div class="text-center">
+            <div class="w-8 h-8 border-2 border-secondary-500/30 border-t-secondary-500 rounded-full animate-spin mx-auto mb-4" />
+            <p class="text-text-600 dark:text-text-400">Loading...</p>
+          </div>
+        </div>
+      ) : (
+        <div class="min-h-screen bg-gradient-to-b from-neutral-50 to-neutral-100 dark:from-neutral-900 dark:to-neutral-800">
       {/* Header */}
       <header class="bg-white dark:bg-neutral-900 shadow-sm">
         <div class="container mx-auto px-4 py-4 flex items-center justify-between">
@@ -427,7 +440,8 @@ const Landing: Component = () => {
           </p>
         </div>
       </footer>
-    </div>
+        </div>
+      )}
     </>
   );
 };

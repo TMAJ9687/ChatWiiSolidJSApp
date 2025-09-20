@@ -40,12 +40,21 @@ const Feedback: Component = () => {
   };
 
   const handleSkip = () => {
+    // Force navigation with multiple fallback approaches
     try {
-      // Force navigation to home page
+      // First attempt: SolidJS navigate with replace
       navigate("/", { replace: true });
+
+      // Add fallback with slight delay to ensure navigation completes
+      setTimeout(() => {
+        if (window.location.pathname === '/feedback') {
+          // Navigation didn't work, force reload
+          window.location.replace("/");
+        }
+      }, 200);
     } catch (error) {
-      // Fallback: force reload to home page if navigation fails
-      window.location.href = "/";
+      // Immediate fallback if navigate throws
+      window.location.replace("/");
     }
   };
 
