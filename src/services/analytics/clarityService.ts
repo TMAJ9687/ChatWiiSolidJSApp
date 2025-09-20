@@ -34,6 +34,12 @@ class ClarityService {
       return;
     }
 
+    // Don't initialize Clarity on feedback page to prevent blocked client errors
+    if (window.location.pathname === '/feedback') {
+      logger.debug('Clarity: Skipping initialization on feedback page');
+      return;
+    }
+
     this.projectId = projectId;
     
     try {
@@ -194,7 +200,8 @@ class ClarityService {
 export const clarityService = new ClarityService();
 
 // Auto-initialize if project ID is available in environment
+// Skip initialization on feedback page to prevent blocked client errors
 const CLARITY_PROJECT_ID = import.meta.env.VITE_CLARITY_PROJECT_ID;
-if (CLARITY_PROJECT_ID) {
+if (CLARITY_PROJECT_ID && typeof window !== 'undefined' && window.location.pathname !== '/feedback') {
   clarityService.init(CLARITY_PROJECT_ID);
 }
