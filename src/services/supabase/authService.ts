@@ -388,6 +388,47 @@ class AuthService {
   isAuthenticated(): boolean {
     return !!this.currentUser;
   }
+
+  // CENTRALIZED: Safe auth user getter to prevent 403 spam
+  async getSafeAuthUser(): Promise<{ user: any | null; error: any | null }> {
+    try {
+      // Check session validity first
+      const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+
+      if (sessionError || !sessionData.session) {
+        return { user: null, error: new Error('No valid session') };
+      }
+
+      // Get user data
+      const { data: { user }, error } = await supabase.auth.getUser();
+
+      if (error) {
+        // Handle auth errors gracefully
+        if (error.message?.includes('403') ||
+            error.message?.includes('Forbidden') ||
+            error.status === 403) {
+          logger.warn('Auth token expired, clearing session');
+          this.currentUser = null;
+          return { user: null, error: new Error('Session expired') };
+        }
+        return { user: null, error };
+      }
+
+      return { user, error: null };
+    } catch (error: any) {
+      logger.error('Error in getSafeAuthUser:', error);
+
+      // Clear session on auth errors
+      if (error.message?.includes('403') ||
+          error.message?.includes('Forbidden') ||
+          error.status === 403) {
+        this.currentUser = null;
+        return { user: null, error: new Error('Session expired') };
+      }
+
+      return { user: null, error };
+    }
+  }
 }
 
 export const authService = new AuthService();
