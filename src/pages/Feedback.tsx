@@ -1,6 +1,7 @@
-import { Component, createSignal } from "solid-js";
+import { Component, createSignal, onMount } from "solid-js";
 import { useNavigate } from "@solidjs/router";
 import { feedbackService } from "../services/supabase/feedbackService";
+import { clarityService } from "../services/analytics/clarityService";
 import SEOHead from "../components/seo/SEOHead";
 
 const Feedback: Component = () => {
@@ -10,6 +11,11 @@ const Feedback: Component = () => {
   const [isSubmitting, setIsSubmitting] = createSignal(false);
   const [isSubmitted, setIsSubmitted] = createSignal(false);
   const [errorMessage, setErrorMessage] = createSignal("");
+
+  // Disable analytics completely on feedback page
+  onMount(() => {
+    clarityService.disable();
+  });
 
   const handleSubmit = async (e: Event) => {
     e.preventDefault();

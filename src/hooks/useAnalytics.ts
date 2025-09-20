@@ -8,9 +8,14 @@ import { clarityService } from '../services/analytics/clarityService';
 export function useAnalytics() {
   // Initialize analytics on mount
   onMount(() => {
+    // Don't initialize analytics on feedback page
+    if (window.location.pathname === '/feedback') {
+      return;
+    }
+
     // Initialize with project ID from environment variables
     const projectId = import.meta.env.VITE_CLARITY_PROJECT_ID || 'DEFAULT_PROJECT_ID';
-    
+
     if (projectId && projectId !== 'DEFAULT_PROJECT_ID') {
       clarityService.init(projectId);
     }

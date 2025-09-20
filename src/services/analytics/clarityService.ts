@@ -161,6 +161,27 @@ class ClarityService {
   }
 
   /**
+   * Completely disable and stop Clarity tracking
+   * This is used when navigating to pages where tracking should be completely stopped
+   */
+  disable(): void {
+    this.isEnabled = false;
+    this.isInitialized = false;
+
+    // Try to stop Clarity if it's running
+    if (window.clarity) {
+      try {
+        // Clear any existing Clarity state
+        delete (window as any).clarity;
+      } catch (error) {
+        // Ignore errors when trying to disable
+      }
+    }
+
+    logger.debug('Clarity: Completely disabled and stopped');
+  }
+
+  /**
    * Track page views (called automatically by router)
    * @param pageName - Name/path of the page
    */
