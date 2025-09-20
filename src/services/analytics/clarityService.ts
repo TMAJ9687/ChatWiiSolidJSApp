@@ -81,7 +81,12 @@ class ClarityService {
    */
   trackEvent(eventName: string): void {
     if (!this.isInitialized || !this.isEnabled || !window.clarity) return;
-    
+
+    // Skip tracking on feedback page to avoid blocked analytics errors
+    if (window.location.pathname === '/feedback') {
+      return;
+    }
+
     try {
       window.clarity('event', eventName);
     } catch (error) {
@@ -96,7 +101,12 @@ class ClarityService {
    */
   setUserProperty(key: string, value: string | number | boolean): void {
     if (!this.isInitialized || !this.isEnabled || !window.clarity) return;
-    
+
+    // Skip tracking on feedback page to avoid blocked analytics errors
+    if (window.location.pathname === '/feedback') {
+      return;
+    }
+
     try {
       window.clarity('set', key, value);
     } catch (error) {
