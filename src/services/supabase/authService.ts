@@ -288,49 +288,17 @@ class AuthService {
   async signOut() {
     if (this.currentUser) {
       try {
-        // Check if session is still valid before making database queries
-        const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+        // Use basic presence cleanup instead of complex database queries
+        // This prevents 403/406 errors during logout process
+        logger.info("Starting logout cleanup for user:", this.currentUser.id);
 
-        if (!sessionError && sessionData.session) {
-          // Session is valid, proceed with role-based cleanup
-          try {
-            // Get current user profile to check role
-            const { data: userProfile } = await supabase
-              .from("users")
-              .select("role")
-              .eq("id", this.currentUser.id)
-              .single();
+        // Just set user offline in presence table - much safer than role checks
+        await presenceService.setUserOffline(this.currentUser.id);
 
-            if (userProfile) {
-              // Use enhanced cleanup that handles VIP/Admin differently
-              const { enhancedCleanupService } = await import('./enhancedCleanupService');
-              await enhancedCleanupService.handleLogout({
-                id: this.currentUser.id,
-                role: userProfile.role
-              } as User);
-            } else {
-              // Fallback to basic offline setting
-              await presenceService.setUserOffline(this.currentUser.id);
-            }
-          } catch (dbError) {
-            logger.warn("Error during database cleanup, using basic offline:", dbError);
-            // Database query failed, use basic cleanup
-            await presenceService.setUserOffline(this.currentUser.id);
-          }
-        } else {
-          // Session is invalid, skip database operations and use basic cleanup
-          logger.warn("Session invalid during signout, using basic cleanup");
-          await presenceService.setUserOffline(this.currentUser.id);
-        }
+        logger.info("User presence cleaned up successfully");
       } catch (error) {
         logger.warn("Error during logout cleanup:", error);
-        // Continue with logout even if cleanup fails
-        try {
-          await presenceService.setUserOffline(this.currentUser.id);
-        } catch (presenceError) {
-          logger.warn("Error setting user offline:", presenceError);
-          // Even presence cleanup failed, continue with auth signout
-        }
+        // Continue with logout even if cleanup fails - don't block logout process
       }
     }
 

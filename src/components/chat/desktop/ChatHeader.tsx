@@ -59,7 +59,22 @@ const ChatHeader: Component<ChatHeaderProps> = (props) => {
     setShowLogoutModal(false);
     // Reset tab notification on logout
     tabNotification.resetTitle();
-    await authService.signOut();
+
+    try {
+      // Stop background listeners first to prevent 403 errors
+      if (unreadUnsubscribe) {
+        unreadUnsubscribe();
+        unreadUnsubscribe = null;
+      }
+
+      // Sign out with proper error handling
+      await authService.signOut();
+    } catch (error) {
+      console.warn("Logout error (expected during session expiry):", error);
+      // Continue to feedback even if logout has errors
+    }
+
+    // Always navigate to feedback regardless of logout errors
     navigate("/feedback");
   };
 
