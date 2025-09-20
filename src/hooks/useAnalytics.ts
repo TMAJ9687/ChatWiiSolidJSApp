@@ -14,7 +14,7 @@ export function useAnalytics() {
     }
 
     // Initialize with project ID from environment variables
-    const projectId = import.meta.env.VITE_CLARITY_PROJECT_ID || 'DEFAULT_PROJECT_ID';
+    const projectId = import.meta.env.VITE_CLARITY_PROJECT_ID;
 
     if (projectId && projectId !== 'DEFAULT_PROJECT_ID') {
       clarityService.init(projectId);

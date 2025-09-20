@@ -1,7 +1,6 @@
-import { Component, createSignal, onMount } from "solid-js";
+import { Component, createSignal } from "solid-js";
 import { useNavigate } from "@solidjs/router";
 import { feedbackService } from "../services/supabase/feedbackService";
-import { clarityService } from "../services/analytics/clarityService";
 import SEOHead from "../components/seo/SEOHead";
 
 const Feedback: Component = () => {
@@ -11,11 +10,6 @@ const Feedback: Component = () => {
   const [isSubmitting, setIsSubmitting] = createSignal(false);
   const [isSubmitted, setIsSubmitted] = createSignal(false);
   const [errorMessage, setErrorMessage] = createSignal("");
-
-  // Disable analytics completely on feedback page
-  onMount(() => {
-    clarityService.disable();
-  });
 
   const handleSubmit = async (e: Event) => {
     e.preventDefault();
@@ -29,10 +23,14 @@ const Feedback: Component = () => {
       });
 
       setIsSubmitted(true);
-      
+
       // Redirect to home after 3 seconds
       setTimeout(() => {
-        navigate("/");
+        try {
+          navigate("/", { replace: true });
+        } catch (error) {
+          window.location.href = "/";
+        }
       }, 3000);
     } catch (error) {
       setErrorMessage("Failed to submit feedback. Please try again.");
@@ -42,7 +40,13 @@ const Feedback: Component = () => {
   };
 
   const handleSkip = () => {
-    navigate("/");
+    try {
+      // Force navigation to home page
+      navigate("/", { replace: true });
+    } catch (error) {
+      // Fallback: force reload to home page if navigation fails
+      window.location.href = "/";
+    }
   };
 
   return (

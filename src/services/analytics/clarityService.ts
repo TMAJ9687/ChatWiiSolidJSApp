@@ -220,9 +220,6 @@ class ClarityService {
 // Create and export singleton instance
 export const clarityService = new ClarityService();
 
-// Auto-initialize if project ID is available in environment
-// Skip initialization on feedback page to prevent blocked client errors
-const CLARITY_PROJECT_ID = import.meta.env.VITE_CLARITY_PROJECT_ID;
-if (CLARITY_PROJECT_ID && typeof window !== 'undefined' && window.location.pathname !== '/feedback') {
-  clarityService.init(CLARITY_PROJECT_ID);
-}
+// NOTE: Auto-initialization removed to prevent issues on feedback page
+// Components that need analytics should initialize manually in their onMount() hook
+// Example: clarityService.init(import.meta.env.VITE_CLARITY_PROJECT_ID)
