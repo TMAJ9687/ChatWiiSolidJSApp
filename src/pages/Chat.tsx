@@ -26,6 +26,7 @@ import ConnectionStatus from "../components/shared/ConnectionStatus";
 import KickNotificationHandler from "../components/chat/KickNotificationHandler";
 import { authService, presenceService } from "../services/supabase";
 import { idleService } from "../services/idleService";
+import { sessionManager } from "../services/sessionManager";
 import { useAnalytics } from "../hooks/useAnalytics";
 import SEOHead from "../components/seo/SEOHead";
 import type { User } from "../types/user.types";
@@ -109,6 +110,9 @@ const Chat: Component = () => {
       }, 5000);
     }
 
+    // Initialize session manager for persistent auth
+    await sessionManager.initialize(user, navigate);
+
     // Set user as online first
     await presenceService.setUserOnline(user);
 
@@ -124,6 +128,9 @@ const Chat: Component = () => {
   });
 
   onCleanup(() => {
+    // Cleanup session manager
+    sessionManager.cleanup();
+
     if (unsubscribePresence) {
       unsubscribePresence();
     }

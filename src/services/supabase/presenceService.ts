@@ -2,6 +2,7 @@ import { supabase } from "../../config/supabase";
 import type { User } from "../../types/user.types";
 import type { RealtimeChannel } from "@supabase/supabase-js";
 import { createServiceLogger } from "../../utils/logger";
+import { sessionManager } from "../sessionManager";
 
 const logger = createServiceLogger('PresenceService');
 
@@ -99,10 +100,11 @@ class PresenceService {
           }
         });
 
-      // Set up heartbeat to update last_seen every 30 seconds
-      this.heartbeatInterval = setInterval(() => {
-        this.updateActivity(userId);
-      }, 30000);
+      // DISABLED: Heartbeat was causing auth failures and user disappearing
+      // Instead, rely on sessionManager for session health
+      // this.heartbeatInterval = setInterval(() => {
+      //   this.updateActivity(userId);
+      // }, 30000);
 
       // Set up automatic cleanup for stale users every 2 minutes
       this.cleanupTimeoutInterval = setInterval(() => {
@@ -225,28 +227,13 @@ class PresenceService {
     }
   }
 
-  // Update user activity (called on user interaction)
+  // Update user activity (safe version using sessionManager)
   updateActivity(userId: string): void {
-    const now = Date.now();
-    
-    // Throttle activity updates to prevent spam
-    if (now - this.lastActivityUpdate < this.activityUpdateThrottle) {
-      return; // Skip update if within throttle period
-    }
-    
-    this.lastActivityUpdate = now;
-    
-    supabase
-      .from("presence")
-      .update({
-        last_seen: new Date().toISOString()
-      })
-      .eq("user_id", userId)
-      .then(({ error }) => {
-        if (error) {
-          logger.error("Error updating activity:", error);
-        }
-      });
+    // Simply update session manager activity - no risky DB calls
+    sessionManager.updateActivity();
+
+    // Update throttle timestamp
+    this.lastActivityUpdate = Date.now();
   }
 
   // Check if user exists online (for nickname uniqueness)

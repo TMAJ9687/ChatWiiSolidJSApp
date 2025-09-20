@@ -3,6 +3,7 @@ import type { Message } from "../../types/message.types";
 import type { Database } from "../../types/database.types";
 import type { RealtimeChannel } from "@supabase/supabase-js";
 import { createServiceLogger } from "../../utils/logger";
+import { sessionManager } from "../sessionManager";
 
 const logger = createServiceLogger('MessageService');
 
@@ -17,7 +18,7 @@ class MessageService {
     return [userId1, userId2].sort().join("_");
   }
 
-  // Send a message (with optional reply support)
+  // Send a message (with session validation to prevent 409 conflicts)
   async sendMessage(
     senderId: string,
     receiverId: string,
@@ -28,6 +29,11 @@ class MessageService {
     senderNickname?: string,
     voiceData?: { url: string; duration: number }
   ): Promise<void> {
+    // Check session validity before sending
+    if (!sessionManager.isSessionValid()) {
+      throw new Error("Session expired. Please refresh the page.");
+    }
+
     try {
       const messageData: SupabaseMessageInsert = {
         sender_id: senderId,
@@ -44,16 +50,44 @@ class MessageService {
         reply_to_message: replyToMessage || null,
       };
 
-      const { error } = await supabase
-        .from("messages")
-        .insert([messageData]);
+      // Use sessionManager's safe DB operation
+      const result = await sessionManager.safeDbOperation(async () => {
+        const { error } = await supabase
+          .from("messages")
+          .insert([messageData]);
 
-      if (error) {
-        throw error;
+        if (error) {
+          // Handle specific constraint violations
+          if (error.code === '23505') { // Unique constraint violation
+            throw new Error("Message already exists");
+          }
+          if (error.message?.includes('409') || error.message?.includes('Conflict')) {
+            throw new Error("Message conflict - please try again");
+          }
+          throw error;
+        }
+
+        return true;
+      });
+
+      if (!result) {
+        throw new Error("Session expired. Please refresh the page.");
       }
-    } catch (error) {
+    } catch (error: any) {
       logger.error("Error sending message:", error);
-      throw new Error("Failed to send message");
+
+      // Provide user-friendly error messages
+      if (error.message?.includes('Session expired')) {
+        throw error; // Pass through session errors
+      }
+      if (error.message?.includes('already exists')) {
+        throw new Error("Message already sent");
+      }
+      if (error.message?.includes('conflict')) {
+        throw new Error("Message conflict - please try again");
+      }
+
+      throw new Error("Failed to send message. Please try again.");
     }
   }
 
