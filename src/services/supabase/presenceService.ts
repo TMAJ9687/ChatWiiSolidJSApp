@@ -355,17 +355,18 @@ class PresenceService {
       }
     };
 
-    this.browserHandlers.handleVisibilityChange = () => {
-      if (document.hidden && this.currentUserId) {
-        // User switched to another tab/app - update activity but don't set offline
-        this.updateActivity(this.currentUserId);
-      }
-    };
+    // DISABLED: Visibility change was causing mobile users to disappear from list
+    // this.browserHandlers.handleVisibilityChange = () => {
+    //   if (document.hidden && this.currentUserId) {
+    //     this.updateActivity(this.currentUserId);
+    //   }
+    // };
 
     window.addEventListener('beforeunload', this.browserHandlers.handleBeforeUnload);
     window.addEventListener('unload', this.browserHandlers.handleUnload);
     window.addEventListener('pagehide', this.browserHandlers.handleUnload);
-    document.addEventListener('visibilitychange', this.browserHandlers.handleVisibilityChange);
+    // DISABLED: visibilitychange was causing mobile users to disappear
+    // document.addEventListener('visibilitychange', this.browserHandlers.handleVisibilityChange);
 
     this.browserEventsSetup = true;
   }

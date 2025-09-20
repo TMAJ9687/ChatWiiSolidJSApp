@@ -3,7 +3,7 @@ import type { Message } from "../../types/message.types";
 import type { Database } from "../../types/database.types";
 import type { RealtimeChannel } from "@supabase/supabase-js";
 import { createServiceLogger } from "../../utils/logger";
-import { sessionManager } from "../sessionManager";
+import { authProxy } from "../authProxy";
 
 const logger = createServiceLogger('MessageService');
 
@@ -29,11 +29,6 @@ class MessageService {
     senderNickname?: string,
     voiceData?: { url: string; duration: number }
   ): Promise<void> {
-    // Check session validity before sending
-    if (!sessionManager.isSessionValid()) {
-      throw new Error("Session expired. Please refresh the page.");
-    }
-
     try {
       const messageData: SupabaseMessageInsert = {
         sender_id: senderId,
@@ -50,8 +45,8 @@ class MessageService {
         reply_to_message: replyToMessage || null,
       };
 
-      // Use sessionManager's safe DB operation
-      const result = await sessionManager.safeDbOperation(async () => {
+      // Use authProxy's safe DB operation
+      const result = await authProxy.safeDbOperation(async () => {
         const { error } = await supabase
           .from("messages")
           .insert([messageData]);

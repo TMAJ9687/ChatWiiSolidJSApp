@@ -37,18 +37,10 @@ class ConnectionService {
     });
   }
 
-  // Set up Supabase connection listeners
+  // DISABLED: Supabase auth listeners were causing infinite loops
   private setupSupabaseListeners() {
-    supabase.auth.onAuthStateChange((event, session) => {
-      if (event === 'SIGNED_OUT' && this.isOnline()) {
-        // Session lost - possible network issue
-        this.handleConnectionIssue();
-      }
-    });
-
-    // Monitor realtime channel status instead of direct connection
-    // We'll use periodic health checks instead of realtime listeners
-    this.startHealthCheck();
+    // ALL auth state monitoring disabled to prevent cascade failures
+    logger.debug('Supabase auth listeners disabled to prevent auth loops');
   }
 
   // DISABLED: Health check was causing infinite auth loops when sessions expire
