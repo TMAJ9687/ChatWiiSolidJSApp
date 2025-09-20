@@ -26,7 +26,6 @@ class SessionManager {
 
     // Start session monitoring
     this.startSessionMonitoring();
-    this.startHeartbeat();
     this.startSessionRefresh();
   }
 
