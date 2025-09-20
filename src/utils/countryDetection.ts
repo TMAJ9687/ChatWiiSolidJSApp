@@ -35,19 +35,31 @@ export async function detectCountry(): Promise<CountryInfo> {
     }
   }
 
-  // Secondary: Try IPAPI for country detection
+  // Secondary: Try IPAPI for country detection with timeout and proper error handling
   try {
-    const ipApiResponse = await fetch('https://ipapi.co/json/').catch(() => null);
+    // Add timeout to prevent hanging requests
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 3000); // 3 second timeout
+
+    const ipApiResponse = await fetch('https://ipapi.co/json/', {
+      signal: controller.signal,
+      headers: {
+        'Accept': 'application/json'
+      }
+    }).catch(() => null);
+
+    clearTimeout(timeoutId);
+
     if (ipApiResponse?.ok) {
       const ipApiData = await ipApiResponse.json();
       if (ipApiData.country_code) {
         let code = ipApiData.country_code.toUpperCase();
-        
+
         // Special mapping: Israel -> Palestine as per existing code
         if (code === 'IL') {
           code = 'PS';
         }
-        
+
         return {
           code,
           name: getCountryName(code)
@@ -55,7 +67,8 @@ export async function detectCountry(): Promise<CountryInfo> {
       }
     }
   } catch (error) {
-    // IPAPI failed, use fallback
+    // IPAPI failed (CORS, 429, timeout, etc.) - use fallback silently
+    // Don't log to avoid console spam from known issues
   }
   
   // Final fallback to US (timezone detection removed as primary method)

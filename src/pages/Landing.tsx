@@ -40,16 +40,28 @@ const Landing: Component = () => {
   const [captchaToken, setCaptchaToken] = createSignal<string | null>(null);
   const [captchaError, setCaptchaError] = createSignal("");
 
-  // Detect country on mount
+  // Detect country on mount with error handling
   onMount(async () => {
-    const country = await detectCountry();
-    setCountryCode(country.code);
-    setCountryName(country.name);
-    
-    // Track page view and user properties
-    analytics.trackPageView('landing');
-    analytics.setUserProperty('user_country', country.code);
-    analytics.setUserProperty('page_type', 'landing');
+    try {
+      const country = await detectCountry();
+      setCountryCode(country.code);
+      setCountryName(country.name);
+
+      // Track page view and user properties
+      analytics.trackPageView('landing');
+      analytics.setUserProperty('user_country', country.code);
+      analytics.setUserProperty('page_type', 'landing');
+    } catch (error) {
+      // Country detection failed - use defaults and continue
+      logger.warn("Country detection failed, using defaults:", error);
+      setCountryCode("US");
+      setCountryName("United States");
+
+      // Still track page view with default country
+      analytics.trackPageView('landing');
+      analytics.setUserProperty('user_country', 'US');
+      analytics.setUserProperty('page_type', 'landing');
+    }
   });
 
   // Validation effect with comprehensive debugging
