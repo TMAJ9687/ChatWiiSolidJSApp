@@ -40,28 +40,31 @@ const Landing: Component = () => {
   const [captchaToken, setCaptchaToken] = createSignal<string | null>(null);
   const [captchaError, setCaptchaError] = createSignal("");
 
-  // Detect country on mount with error handling
-  onMount(async () => {
-    try {
-      const country = await detectCountry();
-      setCountryCode(country.code);
-      setCountryName(country.name);
+  // Initialize page immediately, defer async operations to prevent navigation blocking
+  onMount(() => {
+    // Immediately track page view with defaults - don't wait for country detection
+    analytics.trackPageView('landing');
+    analytics.setUserProperty('page_type', 'landing');
 
-      // Track page view and user properties
-      analytics.trackPageView('landing');
-      analytics.setUserProperty('user_country', country.code);
-      analytics.setUserProperty('page_type', 'landing');
-    } catch (error) {
-      // Country detection failed - use defaults and continue
-      logger.warn("Country detection failed, using defaults:", error);
-      setCountryCode("US");
-      setCountryName("United States");
+    // Defer country detection and analytics to next tick to avoid blocking navigation
+    setTimeout(async () => {
+      try {
+        const country = await detectCountry();
+        setCountryCode(country.code);
+        setCountryName(country.name);
 
-      // Still track page view with default country
-      analytics.trackPageView('landing');
-      analytics.setUserProperty('user_country', 'US');
-      analytics.setUserProperty('page_type', 'landing');
-    }
+        // Update analytics with actual country
+        analytics.setUserProperty('user_country', country.code);
+      } catch (error) {
+        // Country detection failed - use defaults and continue
+        logger.warn("Country detection failed, using defaults:", error);
+        setCountryCode("US");
+        setCountryName("United States");
+
+        // Update analytics with default country
+        analytics.setUserProperty('user_country', 'US');
+      }
+    }, 0);
   });
 
   // Validation effect with comprehensive debugging

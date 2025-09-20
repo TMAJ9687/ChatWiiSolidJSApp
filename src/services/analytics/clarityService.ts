@@ -29,13 +29,6 @@ class ClarityService {
    * @param projectId - Clarity project ID from Microsoft Clarity dashboard
    */
   init(projectId: string): void {
-    // TEMPORARY: Completely disable Clarity to fix feedback page navigation issues
-    // Clarity is causing ERR_BLOCKED_BY_CLIENT errors that interfere with navigation
-    logger.debug('Clarity: Temporarily disabled due to navigation interference');
-    return;
-
-    // Original initialization code (disabled)
-    /*
     if (!projectId || typeof window === 'undefined' || projectId === 'DEFAULT_PROJECT_ID') {
       logger.warn('Clarity: Invalid project ID or running on server');
       return;
@@ -48,7 +41,6 @@ class ClarityService {
     }
 
     this.projectId = projectId;
-    */
     
     try {
       // Check if Clarity is already loaded
