@@ -3,6 +3,7 @@ import type { User } from "../../types/user.types";
 import type { RealtimeChannel } from "@supabase/supabase-js";
 import { createServiceLogger } from "../../utils/logger";
 import { sessionManager } from "../sessionManager";
+import { authProxy } from "../authProxy";
 
 const logger = createServiceLogger('PresenceService');
 
@@ -100,16 +101,15 @@ class PresenceService {
           }
         });
 
-      // DISABLED: Heartbeat was causing auth failures and user disappearing
-      // Instead, rely on sessionManager for session health
-      // this.heartbeatInterval = setInterval(() => {
-      //   this.updateActivity(userId);
-      // }, 30000);
+      // SAFE HEARTBEAT: Update activity without auth calls to prevent cleanup
+      this.heartbeatInterval = setInterval(() => {
+        this.updateActivitySafe(userId);
+      }, 60000); // 1 minute intervals (reduced frequency)
 
-      // Set up automatic cleanup for stale users every 2 minutes
+      // Set up automatic cleanup for stale users every 10 minutes
       this.cleanupTimeoutInterval = setInterval(() => {
         this.cleanupStaleUsers();
-      }, 120000); // 2 minutes
+      }, 600000); // 10 minutes
 
       this.listeners.push(() => {
         if (this.heartbeatInterval) {
@@ -233,6 +233,33 @@ class PresenceService {
     sessionManager.updateActivity();
 
     // Update throttle timestamp
+    this.lastActivityUpdate = Date.now();
+  }
+
+  // SAFE activity update for heartbeat - uses authProxy protection
+  private updateActivitySafe(userId: string): void {
+    // Use authProxy to safely update last_seen without causing auth loops
+    authProxy.safeDbOperation(async () => {
+      const { error } = await supabase
+        .from("presence")
+        .update({
+          last_seen: new Date().toISOString(),
+          online: true
+        })
+        .eq("user_id", userId);
+
+      if (error) {
+        // Don't throw - this is background maintenance
+        logger.debug("Heartbeat update failed (expected during auth issues):", error.message);
+      }
+
+      return true;
+    }).catch(() => {
+      // Silent fail - heartbeat is not critical, just prevents cleanup
+    });
+
+    // Also update session manager
+    sessionManager.updateActivity();
     this.lastActivityUpdate = Date.now();
   }
 
@@ -392,15 +419,15 @@ class PresenceService {
     this.browserEventsSetup = false;
   }
 
-  // Clean up stale users (no activity for more than 5 minutes)
+  // Clean up stale users (no activity for more than 1 hour)
   private async cleanupStaleUsers(): Promise<void> {
     try {
-      const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000).toISOString();
+      const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000).toISOString();
       
       const { error } = await supabase
         .from("presence")
         .update({ online: false })
-        .lt('last_seen', fiveMinutesAgo)
+        .lt('last_seen', oneHourAgo)
         .eq('online', true);
 
       if (error) {

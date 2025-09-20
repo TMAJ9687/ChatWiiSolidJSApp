@@ -208,15 +208,15 @@ class EnhancedCleanupService {
    */
   async cleanupStaleStandardUsers(): Promise<number> {
     try {
-      // Find standard users who haven't been active for 5 minutes
-      const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000).toISOString();
+      // Find standard users who haven't been active for 1 hour
+      const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000).toISOString();
       
       const { data: staleUsers, error } = await supabase
         .from("users")
         .select("id, role, last_seen")
         .eq("role", "standard")
         .eq("online", true)
-        .lt("last_seen", fiveMinutesAgo);
+        .lt("last_seen", oneHourAgo);
 
       if (error) {
         logger.error("Error finding stale users:", error);
@@ -252,7 +252,7 @@ class EnhancedCleanupService {
       if (cleanedCount > 0) {
         logger.debug(`Automatic cleanup: removed ${cleanedCount} stale standard users`);
       }
-    }, 2 * 60 * 1000); // Every 2 minutes
+    }, 10 * 60 * 1000); // Every 10 minutes
   }
 
   /**
