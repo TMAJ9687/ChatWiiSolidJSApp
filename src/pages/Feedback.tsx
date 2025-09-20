@@ -10,6 +10,7 @@ const Feedback: Component = () => {
   const [isSubmitting, setIsSubmitting] = createSignal(false);
   const [isSubmitted, setIsSubmitted] = createSignal(false);
   const [errorMessage, setErrorMessage] = createSignal("");
+  const [showLeaveDialog, setShowLeaveDialog] = createSignal(false);
 
   const handleSubmit = async (e: Event) => {
     e.preventDefault();
@@ -40,22 +41,22 @@ const Feedback: Component = () => {
   };
 
   const handleSkip = () => {
-    // Force navigation with multiple fallback approaches
-    try {
-      // First attempt: SolidJS navigate with replace
-      navigate("/", { replace: true });
+    // Show inline confirmation dialog instead of browser warning
+    setShowLeaveDialog(true);
+  };
 
-      // Add fallback with slight delay to ensure navigation completes
-      setTimeout(() => {
-        if (window.location.pathname === '/feedback') {
-          // Navigation didn't work, force reload
-          window.location.replace("/");
-        }
-      }, 200);
+  const confirmLeave = () => {
+    // Use immediate navigation without browser warning
+    try {
+      navigate("/", { replace: true });
     } catch (error) {
-      // Immediate fallback if navigate throws
-      window.location.replace("/");
+      // Fallback: force navigation
+      window.location.href = "/";
     }
+  };
+
+  const cancelLeave = () => {
+    setShowLeaveDialog(false);
   };
 
   return (
@@ -185,6 +186,48 @@ const Feedback: Component = () => {
         </div>
       </div>
     </div>
+
+    {/* Inline Leave Confirmation Dialog */}
+    {showLeaveDialog() && (
+      <div class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+        <div class="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-md w-full p-6">
+          <div class="text-center">
+            {/* Icon */}
+            <div class="w-12 h-12 bg-yellow-100 dark:bg-yellow-900/30 rounded-full flex items-center justify-center mx-auto mb-4">
+              <svg class="w-6 h-6 text-yellow-600 dark:text-yellow-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 19c-.77.833.192 2.5 1.732 2.5z" />
+              </svg>
+            </div>
+
+            {/* Title */}
+            <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+              Leave without sharing feedback?
+            </h3>
+
+            {/* Message */}
+            <p class="text-gray-600 dark:text-gray-300 mb-6">
+              Your feedback helps us improve ChatWii for everyone. Are you sure you want to leave?
+            </p>
+
+            {/* Buttons */}
+            <div class="flex gap-3">
+              <button
+                onClick={cancelLeave}
+                class="flex-1 px-4 py-2 bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors"
+              >
+                Stay and Give Feedback
+              </button>
+              <button
+                onClick={confirmLeave}
+                class="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+              >
+                Leave Page
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    )}
     </>
   );
 };
