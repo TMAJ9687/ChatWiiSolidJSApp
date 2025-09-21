@@ -99,8 +99,19 @@ const Landing: Component = () => {
 
     // CAPTCHA validation - check if token exists
     const isCaptchaValid = captchaRequired ? !!captcha : true;
-    
+
     const finalValid = validation.valid && g !== null && a !== null && isCaptchaValid;
+
+    // Debug logging
+    console.log('Validation check:', {
+      validation: validation.valid,
+      gender: g !== null,
+      age: a !== null,
+      captcha: captchaRequired ? !!captcha : 'not required',
+      captchaToken: captcha,
+      finalValid
+    });
+
     setIsValid(finalValid);
   });
 
@@ -185,8 +196,9 @@ const Landing: Component = () => {
     setNickname(nickname);
   };
 
-  // CAPTCHA handlers (disabled but kept for future use)
+  // CAPTCHA handlers for bot protection
   const handleCaptchaVerify = (token: string) => {
+    console.log('CAPTCHA verified with token:', token); // Debug log
     setCaptchaToken(token);
     setCaptchaError("");
   };

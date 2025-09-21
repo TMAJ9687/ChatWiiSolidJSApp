@@ -13,10 +13,10 @@ function criticalCSSPlugin() {
         if (cssFiles.length > 0) {
           const cssFile = cssFiles[0];
 
-          // Security and CAPTCHA meta tags
+          // Security and CAPTCHA meta tags with analytics domains
           const securityMeta = `
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://challenges.cloudflare.com https://www.google.com https://www.gstatic.com https://www.recaptcha.net; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; connect-src 'self' https://challenges.cloudflare.com https://www.google.com https://ipapi.co; frame-src 'self' https://challenges.cloudflare.com https://www.google.com https://www.recaptcha.net; img-src 'self' data: https:;">
-    <meta http-equiv="Permissions-Policy" content="camera=(), microphone=(), geolocation=(), interest-cohort=(), browsing-topics=()">`;
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://challenges.cloudflare.com https://www.google.com https://www.gstatic.com https://www.recaptcha.net https://static.cloudflareinsights.com https://www.clarity.ms; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; connect-src 'self' https://challenges.cloudflare.com https://www.google.com https://ipapi.co https://static.cloudflareinsights.com https://www.clarity.ms; frame-src 'self' https://challenges.cloudflare.com https://www.google.com https://www.recaptcha.net; img-src 'self' data: https:;">
+    <meta http-equiv="Permissions-Policy" content="camera=(), microphone=(), geolocation=()">`;
 
           // Critical CSS (above-the-fold styles)
           const criticalCSS = `
