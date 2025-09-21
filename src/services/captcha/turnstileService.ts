@@ -19,9 +19,9 @@ interface TurnstileOptions {
   sitekey: string;
   theme?: 'light' | 'dark' | 'auto';
   size?: 'compact' | 'normal';
-  callback?: string;
-  'expired-callback'?: string;
-  'error-callback'?: string;
+  callback?: string | (() => void);
+  'expired-callback'?: string | (() => void);
+  'error-callback'?: string | (() => void);
 }
 
 declare const window: TurnstileWindow;
@@ -224,35 +224,34 @@ class TurnstileService {
 
     this.callbacks = callbacks;
 
-    // Set up unique global callbacks to avoid conflicts
-    const callbackId = Date.now().toString() + Math.random().toString(36);
-    const successCallback = `chatwii_turnstile_success_${callbackId}`;
-    const expiredCallback = `chatwii_turnstile_expired_${callbackId}`;
-    const errorCallback = `chatwii_turnstile_error_${callbackId}`;
-
-    // Enhanced callback with error handling and null checks
-    (window as any)[successCallback] = () => {
+    // Use simpler direct function approach to avoid callback errors
+    const successCallback = () => {
       try {
+        console.log('Turnstile: Success callback triggered'); // Debug log
         if (!this.callbacks || typeof this.callbacks.onSuccess !== 'function') {
           console.warn('Turnstile: onSuccess callback not available');
           return;
         }
 
         const token = this.getResponse();
+        console.log('Turnstile: Retrieved token:', token); // Debug log
         if (token) {
           this.callbacks.onSuccess(token);
         } else {
+          console.warn('Turnstile: No token received');
           this.callbacks.onError();
         }
       } catch (error) {
+        console.error('Turnstile: Error in success callback:', error);
         if (this.callbacks) {
           this.callbacks.onError();
         }
       }
     };
 
-    (window as any)[expiredCallback] = () => {
+    const expiredCallback = () => {
       try {
+        console.log('Turnstile: Expired callback triggered'); // Debug log
         if (this.callbacks && typeof this.callbacks.onExpired === 'function') {
           this.callbacks.onExpired();
         }
@@ -261,8 +260,9 @@ class TurnstileService {
       }
     };
 
-    (window as any)[errorCallback] = () => {
+    const errorCallback = () => {
       try {
+        console.log('Turnstile: Error callback triggered'); // Debug log
         if (this.callbacks && typeof this.callbacks.onError === 'function') {
           this.callbacks.onError();
         }
@@ -294,7 +294,7 @@ class TurnstileService {
         callbacks.onError();
       }, 20000);
 
-      // Enhanced render with device-specific optimizations
+      // Enhanced render with device-specific optimizations using direct function callbacks
       const renderOptions = {
         sitekey: this.siteKey,
         theme: widgetTheme,
