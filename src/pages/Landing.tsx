@@ -94,11 +94,11 @@ const Landing: Component = () => {
     const a = age();
     const captcha = captchaToken();
     
-    // CAPTCHA temporarily disabled for universal device compatibility
-    const captchaRequired = false; // Disabled until device compatibility issues resolved
-    
-    // CAPTCHA validation disabled - always valid
-    const isCaptchaValid = true;
+    // CAPTCHA enabled for bot protection
+    const captchaRequired = true; // Re-enabled for security
+
+    // CAPTCHA validation - check if token exists
+    const isCaptchaValid = captchaRequired ? !!captcha : true;
     
     const finalValid = validation.valid && g !== null && a !== null && isCaptchaValid;
     setIsValid(finalValid);
@@ -205,14 +205,11 @@ const Landing: Component = () => {
   const handleStartChat = async () => {
     if (!isValid()) return;
 
-    // CAPTCHA check disabled for universal device compatibility
-    // const captchaRequired = false; // Disabled until device compatibility issues resolved
-    
-    // Skip CAPTCHA validation entirely
-    // if (captchaRequired && !captchaToken()) {
-    //   setCaptchaError("Please complete CAPTCHA verification.");
-    //   return;
-    // }
+    // CAPTCHA validation for bot protection
+    if (captchaRequired && !captchaToken()) {
+      setCaptchaError("Please complete CAPTCHA verification.");
+      return;
+    }
 
     setLoading(true);
     try {
@@ -330,8 +327,8 @@ const Landing: Component = () => {
 
             <AgeDropdown value={age()} onChange={setAge} />
 
-            {/* CAPTCHA Widget - Temporarily disabled for device compatibility */}
-            <Show when={false}>
+            {/* CAPTCHA Widget - Enabled for bot protection */}
+            <Show when={true}>
               <div class="space-y-2">
                 <CaptchaWidget
                   onVerify={handleCaptchaVerify}
