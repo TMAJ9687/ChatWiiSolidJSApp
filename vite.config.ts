@@ -13,6 +13,11 @@ function criticalCSSPlugin() {
         if (cssFiles.length > 0) {
           const cssFile = cssFiles[0];
 
+          // Security and CAPTCHA meta tags
+          const securityMeta = `
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://challenges.cloudflare.com https://www.google.com https://www.gstatic.com https://www.recaptcha.net; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; connect-src 'self' https://challenges.cloudflare.com https://www.google.com https://ipapi.co; frame-src 'self' https://challenges.cloudflare.com https://www.google.com https://www.recaptcha.net; img-src 'self' data: https:;">
+    <meta http-equiv="Permissions-Policy" content="camera=(), microphone=(), geolocation=(), interest-cohort=(), browsing-topics=()">`;
+
           // Critical CSS (above-the-fold styles)
           const criticalCSS = `
     <style>
@@ -36,14 +41,14 @@ function criticalCSSPlugin() {
       .shadow-xl{box-shadow:0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1)}
     </style>`;
 
-          // Async CSS loading
+          // Async CSS loading with proper crossorigin
           const asyncCSS = `
-    <link rel="preload" href="/${cssFile}" as="style" onload="this.onload=null;this.rel='stylesheet'">
+    <link rel="preload" href="/${cssFile}" as="style" crossorigin onload="this.onload=null;this.rel='stylesheet'">
     <noscript><link rel="stylesheet" href="/${cssFile}"></noscript>`;
 
           return html.replace(
             '<title>ChatWii</title>',
-            `${criticalCSS}\n${asyncCSS}\n    <title>ChatWii</title>`
+            `${securityMeta}\n${criticalCSS}\n${asyncCSS}\n    <title>ChatWii</title>`
           );
         }
       }

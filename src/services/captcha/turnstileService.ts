@@ -103,6 +103,8 @@ class TurnstileService {
       const script = document.createElement('script');
       script.src = 'https://challenges.cloudflare.com/turnstile/v0/api.js';
       script.type = 'text/javascript';
+      script.async = true;
+      script.defer = true;
       
       // Enhanced loading with multiple fallback mechanisms
       let loadTimeout: NodeJS.Timeout;
@@ -149,9 +151,15 @@ class TurnstileService {
 
     // Check for modern JS features required by Turnstile
     try {
-      // Check if browser supports modern features
-      eval('const test = () => {};'); // Arrow functions
-      eval('let test2 = {};'); // let/const
+      // Check if browser supports modern features safely
+      const testArrowFn = () => {}; // Arrow functions
+      let testLet = {}; // let/const
+      const testConst = {}; // const
+
+      // Check if these variables are properly defined
+      if (typeof testArrowFn !== 'function' || typeof testLet !== 'object' || typeof testConst !== 'object') {
+        return false;
+      }
     } catch (e) {
       return false;
     }
@@ -222,13 +230,18 @@ class TurnstileService {
     const expiredCallback = `chatwii_turnstile_expired_${callbackId}`;
     const errorCallback = `chatwii_turnstile_error_${callbackId}`;
 
-    // Enhanced callback with error handling
+    // Enhanced callback with error handling and null checks
     (window as any)[successCallback] = () => {
       try {
+        if (!this.callbacks || typeof this.callbacks.onSuccess !== 'function') {
+          console.warn('Turnstile: onSuccess callback not available');
+          return;
+        }
+
         const token = this.getResponse();
-        if (token && this.callbacks) {
+        if (token) {
           this.callbacks.onSuccess(token);
-        } else if (this.callbacks) {
+        } else {
           this.callbacks.onError();
         }
       } catch (error) {
@@ -239,14 +252,22 @@ class TurnstileService {
     };
 
     (window as any)[expiredCallback] = () => {
-      if (this.callbacks) {
-        this.callbacks.onExpired();
+      try {
+        if (this.callbacks && typeof this.callbacks.onExpired === 'function') {
+          this.callbacks.onExpired();
+        }
+      } catch (error) {
+        console.warn('Turnstile: Error in expired callback:', error);
       }
     };
 
     (window as any)[errorCallback] = () => {
-      if (this.callbacks) {
-        this.callbacks.onError();
+      try {
+        if (this.callbacks && typeof this.callbacks.onError === 'function') {
+          this.callbacks.onError();
+        }
+      } catch (error) {
+        console.warn('Turnstile: Error in error callback:', error);
       }
     };
 
