@@ -41,6 +41,9 @@ const Landing: Component = () => {
   const [captchaToken, setCaptchaToken] = createSignal<string | null>(null);
   const [captchaError, setCaptchaError] = createSignal("");
 
+  // CAPTCHA enabled for bot protection
+  const captchaRequired = true;
+
   // Initialize page with immediate readiness signal, then enhance
   onMount(() => {
     // Mark page as ready immediately to prevent navigation blocking
@@ -93,9 +96,6 @@ const Landing: Component = () => {
     const g = gender();
     const a = age();
     const captcha = captchaToken();
-    
-    // CAPTCHA enabled for bot protection
-    const captchaRequired = true; // Re-enabled for security
 
     // CAPTCHA validation - check if token exists
     const isCaptchaValid = captchaRequired ? !!captcha : true;
