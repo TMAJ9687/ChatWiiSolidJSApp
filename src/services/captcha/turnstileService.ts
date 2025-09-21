@@ -227,22 +227,17 @@ class TurnstileService {
     // Use simpler direct function approach to avoid callback errors
     const successCallback = () => {
       try {
-        console.log('Turnstile: Success callback triggered'); // Debug log
         if (!this.callbacks || typeof this.callbacks.onSuccess !== 'function') {
-          console.warn('Turnstile: onSuccess callback not available');
           return;
         }
 
         const token = this.getResponse();
-        console.log('Turnstile: Retrieved token:', token); // Debug log
         if (token) {
           this.callbacks.onSuccess(token);
         } else {
-          console.warn('Turnstile: No token received');
           this.callbacks.onError();
         }
       } catch (error) {
-        console.error('Turnstile: Error in success callback:', error);
         if (this.callbacks) {
           this.callbacks.onError();
         }
@@ -251,23 +246,21 @@ class TurnstileService {
 
     const expiredCallback = () => {
       try {
-        console.log('Turnstile: Expired callback triggered'); // Debug log
         if (this.callbacks && typeof this.callbacks.onExpired === 'function') {
           this.callbacks.onExpired();
         }
       } catch (error) {
-        console.warn('Turnstile: Error in expired callback:', error);
+        // Silent error handling
       }
     };
 
     const errorCallback = () => {
       try {
-        console.log('Turnstile: Error callback triggered'); // Debug log
         if (this.callbacks && typeof this.callbacks.onError === 'function') {
           this.callbacks.onError();
         }
       } catch (error) {
-        console.warn('Turnstile: Error in error callback:', error);
+        // Silent error handling
       }
     };
 
