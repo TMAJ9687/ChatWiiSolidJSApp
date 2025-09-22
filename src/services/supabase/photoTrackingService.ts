@@ -126,27 +126,23 @@ class PhotoTrackingService {
       if (error) {
         if (error.code === 'PGRST116') {
           // No existing record found - user hasn't used photos today
-          return { canUpload: true, remaining: limit };
+          return false;
         } else if (error.message?.includes('406') || error.message?.includes('Not Acceptable') || error.code === 'PGRST301') {
           // RLS policy issues or table doesn't exist - allow upload but don't track
           logger.warn('Photo usage check failed - allowing upload without tracking:', error.message);
-          return { canUpload: true, remaining: limit };
+          return false;
         } else {
           // Other errors - log but don't block upload
           logger.error('Photo usage check error:', error);
-          return { canUpload: true, remaining: limit };
+          return false;
         }
       }
 
       const currentCount = data?.count || 0;
-      const remaining = Math.max(0, limit - currentCount);
-      return {
-        canUpload: currentCount < limit,
-        remaining: remaining
-      };
+      return currentCount >= limit;
     } catch (error) {
       logger.error('Error checking daily limit:', error);
-      return { canUpload: true, remaining: this.DAILY_LIMIT }; // Allow usage if we can't check
+      return false; // Allow usage if we can't check
     }
   }
 
