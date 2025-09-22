@@ -62,8 +62,7 @@ class PhotoTrackingService {
           logger.warn('Photo usage table not available - skipping tracking');
           return;
         } else if (fetchError.message?.includes('406') || fetchError.message?.includes('Not Acceptable')) {
-          // 406 errors - likely RLS policy issues
-          logger.warn('Photo usage access denied - skipping tracking');
+          // 406 errors - likely RLS policy issues - silently skip tracking
           return;
         } else {
           logger.error('Photo usage fetch error:', fetchError);
@@ -129,7 +128,7 @@ class PhotoTrackingService {
           return { canUpload: true, remaining: limit };
         } else if (error.message?.includes('406') || error.message?.includes('Not Acceptable') || error.code === 'PGRST301') {
           // RLS policy issues or table doesn't exist - allow upload but don't track
-          logger.warn('Photo usage check failed - allowing upload without tracking:', error.message);
+          // Silently handle RLS errors to avoid console spam
           return { canUpload: true, remaining: limit };
         } else {
           // Other errors - log but don't block upload
