@@ -101,7 +101,10 @@ class SessionManager {
 
   // Clean up user presence without auth calls
   private async cleanupUserPresence(): Promise<void> {
-    if (!this.user) return;
+    if (!this.user?.id) {
+      logger.warn("Cannot cleanup presence: user or user ID is null");
+      return;
+    }
 
     try {
       // Just update presence table directly without auth verification
