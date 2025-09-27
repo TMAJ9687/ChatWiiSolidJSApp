@@ -128,18 +128,46 @@ class ImageKitService {
     }
   }
 
-  // Direct upload to ImageKit using client-side API
+  // Get authentication parameters from our Cloudflare Worker
+  private async getAuthenticationParameters(): Promise<{
+    token: string;
+    expire: number;
+    signature: string;
+  }> {
+    try {
+      // Use your Cloudflare Pages domain
+      const authEndpoint = 'https://chatwii.pages.dev/api/imagekit-auth';
+      const response = await fetch(authEndpoint);
+
+      if (!response.ok) {
+        throw new Error(`Authentication failed: ${response.status}`);
+      }
+
+      return await response.json();
+    } catch (error) {
+      logger.error('Failed to get ImageKit authentication:', error);
+      throw new Error('Failed to authenticate with ImageKit');
+    }
+  }
+
+  // Upload to ImageKit using authenticated API
   private async uploadToImageKit(
     file: File,
     fileName: string,
     onProgress?: (progress: number) => void
   ): Promise<{ url: string; fileId: string }> {
+    // Get authentication parameters
+    const authParams = await this.getAuthenticationParameters();
+
     const formData = new FormData();
     formData.append('file', file);
     formData.append('fileName', fileName);
     formData.append('publicKey', imagekitConfig.publicKey);
+    formData.append('token', authParams.token);
+    formData.append('expire', authParams.expire.toString());
+    formData.append('signature', authParams.signature);
 
-    // For client-side uploads without authentication endpoint
+    // Additional upload parameters
     formData.append('useUniqueFileName', 'true');
     formData.append('tags', 'chatwii,chat-image');
 

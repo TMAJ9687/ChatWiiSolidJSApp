@@ -1,0 +1,90 @@
+/**
+ * Cloudflare Worker for ImageKit Authentication
+ * Deploy this to: your-domain.pages.dev/api/imagekit-auth
+ */
+
+export default {
+  async fetch(request, env) {
+    // Handle CORS preflight
+    if (request.method === 'OPTIONS') {
+      return new Response(null, {
+        status: 200,
+        headers: {
+          'Access-Control-Allow-Origin': '*',
+          'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+          'Access-Control-Allow-Headers': 'Content-Type',
+        },
+      });
+    }
+
+    if (request.method !== 'GET') {
+      return new Response('Method not allowed', { status: 405 });
+    }
+
+    // ImageKit authentication endpoint
+    // This generates the required signature for secure uploads
+
+    const token = generateToken();
+    const expire = Math.floor(Date.now() / 1000) + 3600; // 1 hour from now
+
+    // You'll need to set these as environment variables in Cloudflare Pages
+    const privateKey = env.IMAGEKIT_PRIVATE_KEY; // Set this in Cloudflare Pages env vars
+    const publicKey = env.IMAGEKIT_PUBLIC_KEY || "public_o4AoAY8pBf4VqcJ4+YY7XXL+bco=";
+
+    if (!privateKey) {
+      return new Response('ImageKit private key not configured', { status: 500 });
+    }
+
+    // Generate signature
+    const signature = await generateSignature(token, expire, privateKey);
+
+    const authResponse = {
+      token: token,
+      expire: expire,
+      signature: signature
+    };
+
+    return new Response(JSON.stringify(authResponse), {
+      status: 200,
+      headers: {
+        'Content-Type': 'application/json',
+        'Access-Control-Allow-Origin': '*',
+      },
+    });
+  }
+};
+
+// Generate random token
+function generateToken() {
+  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+  let result = '';
+  for (let i = 0; i < 32; i++) {
+    result += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+  return result;
+}
+
+// Generate HMAC-SHA1 signature for ImageKit
+async function generateSignature(token, expire, privateKey) {
+  const message = token + expire;
+
+  const encoder = new TextEncoder();
+  const keyData = encoder.encode(privateKey);
+  const messageData = encoder.encode(message);
+
+  const cryptoKey = await crypto.subtle.importKey(
+    'raw',
+    keyData,
+    { name: 'HMAC', hash: 'SHA-1' },
+    false,
+    ['sign']
+  );
+
+  const signature = await crypto.subtle.sign('HMAC', cryptoKey, messageData);
+
+  // Convert to hex string
+  const hashArray = Array.from(new Uint8Array(signature));
+  const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+
+  return hashHex;
+}
