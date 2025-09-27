@@ -74,7 +74,10 @@ class SessionManager {
         logger.error("Session refresh failed:", error);
         await this.handleSessionExpiry();
       } else {
-        logger.info("Session refreshed successfully");
+        // Only log session refresh in development
+        if (import.meta.env.DEV) {
+          logger.info("Session refreshed successfully");
+        }
         this.sessionValid = true;
         this.lastSessionCheck = Date.now();
       }

@@ -11,11 +11,16 @@ class IdleService {
   private lastActivity: number = Date.now();
   private userId: string | null = null;
   private navigate: any = null;
+  private activityHandler: () => void;
 
   // Initialize idle detection
   initialize(userId: string, navigate: any) {
     this.userId = userId;
     this.navigate = navigate;
+
+    // Create bound activity handler to maintain proper cleanup
+    this.activityHandler = () => this.handleActivity();
+
     this.resetIdleTimer();
     this.setupEventListeners();
   }
@@ -32,15 +37,11 @@ class IdleService {
     ];
 
     events.forEach((event) => {
-      document.addEventListener(event, () => this.handleActivity(), true);
+      document.addEventListener(event, this.activityHandler, true);
     });
 
     // Also track visibility change
-    document.addEventListener("visibilitychange", () => {
-      if (!document.hidden) {
-        this.handleActivity();
-      }
-    });
+    document.addEventListener("visibilitychange", this.activityHandler);
   }
 
   // Handle user activity
@@ -73,7 +74,9 @@ class IdleService {
 
   // Handle idle state - direct logout instead of idle page
   private async handleIdle() {
-    logger.info("User idle for 1 hour, automatically logging out");
+    if (import.meta.env.DEV) {
+      logger.info("User idle for 1 hour, automatically logging out");
+    }
 
     try {
       // Import auth service dynamically to avoid circular dependencies
@@ -97,17 +100,23 @@ class IdleService {
       this.idleTimer = null;
     }
 
-    const events = [
-      "mousedown",
-      "mousemove",
-      "keypress",
-      "scroll",
-      "touchstart",
-      "click",
-    ];
-    events.forEach((event) => {
-      document.removeEventListener(event, () => this.handleActivity(), true);
-    });
+    // Remove event listeners using the same function reference
+    if (this.activityHandler) {
+      const events = [
+        "mousedown",
+        "mousemove",
+        "keypress",
+        "scroll",
+        "touchstart",
+        "click",
+      ];
+      events.forEach((event) => {
+        document.removeEventListener(event, this.activityHandler, true);
+      });
+
+      // Remove visibility change listener
+      document.removeEventListener("visibilitychange", this.activityHandler);
+    }
   }
 
   // Get time until idle
