@@ -5,6 +5,8 @@
 
 export async function onRequest(context) {
   const { request, env } = context;
+
+  try {
     // Handle CORS preflight
     if (request.method === 'OPTIONS') {
       return new Response(null, {
@@ -22,17 +24,24 @@ export async function onRequest(context) {
     }
 
     // ImageKit authentication endpoint
-    // This generates the required signature for secure uploads
-
     const token = generateToken();
     const expire = Math.floor(Date.now() / 1000) + 3600; // 1 hour from now
 
-    // You'll need to set these as environment variables in Cloudflare Pages
-    const privateKey = env.IMAGEKIT_PRIVATE_KEY; // Set this in Cloudflare Pages env vars
+    // Get environment variables
+    const privateKey = env.IMAGEKIT_PRIVATE_KEY;
     const publicKey = env.IMAGEKIT_PUBLIC_KEY || "public_o4AoAY8pBf4VqcJ4+YY7XXL+bco=";
 
     if (!privateKey) {
-      return new Response('ImageKit private key not configured', { status: 500 });
+      return new Response(JSON.stringify({
+        error: 'ImageKit private key not configured',
+        debug: 'Check Cloudflare Pages environment variables'
+      }), {
+        status: 500,
+        headers: {
+          'Content-Type': 'application/json',
+          'Access-Control-Allow-Origin': '*',
+        }
+      });
     }
 
     // Generate signature
@@ -51,6 +60,19 @@ export async function onRequest(context) {
         'Access-Control-Allow-Origin': '*',
       },
     });
+  } catch (error) {
+    return new Response(JSON.stringify({
+      error: 'Function error',
+      message: error.message,
+      stack: error.stack
+    }), {
+      status: 500,
+      headers: {
+        'Content-Type': 'application/json',
+        'Access-Control-Allow-Origin': '*',
+      }
+    });
+  }
 }
 
 // Generate random token
