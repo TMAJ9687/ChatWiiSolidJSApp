@@ -127,9 +127,13 @@ class PhotoTrackingService {
         if (error.code === 'PGRST116') {
           // No existing record found - user hasn't used photos today
           return false;
-        } else if (error.message?.includes('406') || error.message?.includes('Not Acceptable') || error.code === 'PGRST301') {
-          // RLS policy issues or table doesn't exist - allow upload but don't track
-          logger.warn('Photo usage check failed - allowing upload without tracking:', error.message);
+        } else if (error.message?.includes('406') || error.message?.includes('Not Acceptable') || error.code === '406') {
+          // 406 errors - likely RLS policy issues, assume user can upload
+          logger.warn('Photo usage check failed (RLS policy), allowing upload');
+          return false;
+        } else if (error.code === 'PGRST301' || error.message?.includes('relation "public.photo_usage" does not exist')) {
+          // Table doesn't exist - allow upload but don't track
+          logger.warn('Photo usage table not available - allowing upload without tracking');
           return false;
         } else {
           // Other errors - log but don't block upload

@@ -97,7 +97,9 @@
       "Bash(grep:*)",
       "Bash(npm ls:*)",
       "Bash(timeout 10 npm run dev)",
-      "Bash(npm run migrate:*)"
+      "Bash(npm run migrate:*)",
+      "Bash(copy workers\\imagekit-auth.js functions\\api\\imagekit-auth.js)",
+      "Bash(curl:*)"
     ],
     "deny": [],
     "ask": []

@@ -1,10 +1,10 @@
 /**
- * Cloudflare Pages Function for ImageKit Authentication
- * Available at: your-domain.pages.dev/api/imagekit-auth
+ * Cloudflare Worker for ImageKit Authentication
+ * Deploy this to: your-domain.pages.dev/api/imagekit-auth
  */
 
-export async function onRequest(context) {
-  const { request, env } = context;
+export default {
+  async fetch(request, env) {
     // Handle CORS preflight
     if (request.method === 'OPTIONS') {
       return new Response(null, {
@@ -51,7 +51,8 @@ export async function onRequest(context) {
         'Access-Control-Allow-Origin': '*',
       },
     });
-}
+  }
+};
 
 // Generate random token
 function generateToken() {
