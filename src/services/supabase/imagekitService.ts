@@ -235,8 +235,12 @@ class ImageKitService {
     quality?: number;
     format?: string;
   }): string {
-    if (!originalUrl.includes('ik.imagekit.io')) {
-      return originalUrl; // Not an ImageKit URL
+    // Return original URL if it's empty, invalid, or contains placeholder patterns
+    if (!originalUrl ||
+        !originalUrl.includes('ik.imagekit.io') ||
+        originalUrl.includes('text=') ||
+        originalUrl.includes('600x400')) {
+      return originalUrl;
     }
 
     let transformations: string[] = [];

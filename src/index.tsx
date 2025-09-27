@@ -4,6 +4,11 @@ import { MetaProvider } from '@solidjs/meta';
 
 import './index.css';
 import App from './App';
+import { errorSuppression, NetworkErrorSuppression } from './utils/errorSuppression';
+
+// Initialize error suppression for production
+errorSuppression.initialize();
+NetworkErrorSuppression.initialize();
 
 const root = document.getElementById('root');
 

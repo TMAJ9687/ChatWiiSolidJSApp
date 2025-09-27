@@ -59,15 +59,13 @@ class PhotoTrackingService {
           // No existing record found - continue to create new one
         } else if (fetchError.code === 'PGRST301' || fetchError.message?.includes('relation "public.photo_usage" does not exist')) {
           // Table doesn't exist - silently skip photo tracking
-          logger.warn('Photo usage table not available - skipping tracking');
           return;
         } else if (fetchError.message?.includes('406') || fetchError.message?.includes('Not Acceptable')) {
-          // 406 errors - likely RLS policy issues
-          logger.warn('Photo usage access denied - skipping tracking');
+          // 406 errors - likely RLS policy issues, silently skip
           return;
         } else {
-          logger.error('Photo usage fetch error:', fetchError);
-          return; // Don't throw, just return to prevent 406 errors
+          // Other errors - silently skip to prevent console spam
+          return;
         }
       }
 
@@ -128,16 +126,13 @@ class PhotoTrackingService {
           // No existing record found - user hasn't used photos today
           return false;
         } else if (error.message?.includes('406') || error.message?.includes('Not Acceptable') || error.code === '406') {
-          // 406 errors - likely RLS policy issues, assume user can upload
-          logger.warn('Photo usage check failed (RLS policy), allowing upload');
+          // 406 errors - likely RLS policy issues, silently allow upload
           return false;
         } else if (error.code === 'PGRST301' || error.message?.includes('relation "public.photo_usage" does not exist')) {
-          // Table doesn't exist - allow upload but don't track
-          logger.warn('Photo usage table not available - allowing upload without tracking');
+          // Table doesn't exist - silently allow upload
           return false;
         } else {
-          // Other errors - log but don't block upload
-          logger.error('Photo usage check error:', error);
+          // Other errors - silently allow upload to prevent blocking users
           return false;
         }
       }
