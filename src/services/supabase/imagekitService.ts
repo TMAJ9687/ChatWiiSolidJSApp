@@ -136,7 +136,7 @@ class ImageKitService {
   }> {
     try {
       // Use your Cloudflare Pages domain
-      const authEndpoint = 'https://chatwii.pages.dev/api/imagekit-auth';
+      const authEndpoint = 'https://chatwiisolidjsapp.pages.dev/api/imagekit-auth';
       const response = await fetch(authEndpoint);
 
       if (!response.ok) {

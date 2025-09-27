@@ -3,38 +3,37 @@
  * Available at: your-domain.pages.dev/api/imagekit-auth
  */
 
-export async function onRequest(context) {
+export async function onRequestOptions() {
+  return new Response(null, {
+    status: 200,
+    headers: {
+      'Access-Control-Allow-Origin': '*',
+      'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+      'Access-Control-Allow-Headers': 'Content-Type',
+    },
+  });
+}
+
+export async function onRequestGet(context) {
   const { request, env } = context;
 
   try {
-    // Handle CORS preflight
-    if (request.method === 'OPTIONS') {
-      return new Response(null, {
-        status: 200,
-        headers: {
-          'Access-Control-Allow-Origin': '*',
-          'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-          'Access-Control-Allow-Headers': 'Content-Type',
-        },
-      });
-    }
+    // Basic test first
+    const testResponse = {
+      status: 'working',
+      timestamp: Date.now(),
+      hasEnv: !!env
+    };
 
-    if (request.method !== 'GET') {
-      return new Response('Method not allowed', { status: 405 });
-    }
-
-    // ImageKit authentication endpoint
-    const token = generateToken();
-    const expire = Math.floor(Date.now() / 1000) + 3600; // 1 hour from now
-
-    // Get environment variables
-    const privateKey = env.IMAGEKIT_PRIVATE_KEY;
-    const publicKey = env.IMAGEKIT_PUBLIC_KEY || "public_o4AoAY8pBf4VqcJ4+YY7XXL+bco=";
+    // Check if we have environment variables
+    const privateKey = env?.IMAGEKIT_PRIVATE_KEY;
 
     if (!privateKey) {
       return new Response(JSON.stringify({
         error: 'ImageKit private key not configured',
-        debug: 'Check Cloudflare Pages environment variables'
+        debug: 'Check Cloudflare Pages environment variables',
+        envKeys: Object.keys(env || {}),
+        test: testResponse
       }), {
         status: 500,
         headers: {
@@ -43,6 +42,10 @@ export async function onRequest(context) {
         }
       });
     }
+
+    // ImageKit authentication endpoint
+    const token = generateToken();
+    const expire = Math.floor(Date.now() / 1000) + 3600; // 1 hour from now
 
     // Generate signature
     const signature = await generateSignature(token, expire, privateKey);
