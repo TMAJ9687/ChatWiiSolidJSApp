@@ -90,26 +90,33 @@ const ChatArea: Component<ChatAreaProps> = (props) => {
   // Listen to messages when user is selected
   createEffect(() => {
     if (props.selectedUser && props.currentUser) {
+      // Store current values to prevent null access in async callbacks
+      const currentUser = props.currentUser;
+      const selectedUser = props.selectedUser;
+
       // Check bidirectional blocking
       Promise.all([
         blockingService.isUserBlocked(
-          props.currentUser.id,
-          props.selectedUser.id
+          currentUser.id,
+          selectedUser.id
         ),
-        blockingService.isBlockedBy(props.selectedUser.id),
+        blockingService.isBlockedBy(selectedUser.id),
       ]).then(([blocked, blockedBy]) => {
         setIsBlocked(blocked);
         setIsBlockedBy(blockedBy);
 
         // Clear any previous blocking message
         setBlockingMessage(null);
+      }).catch(error => {
+        // Handle blocking check errors gracefully
+        console.warn('Error checking blocking status:', error);
       });
 
       // Mark messages as read (silently handle errors)
       try {
         messageService.markMessagesAsRead(
-          props.currentUser.id,
-          props.selectedUser.id
+          currentUser.id,
+          selectedUser.id
         );
       } catch (error) {
         // No messages to mark as read - silently continue
@@ -118,15 +125,15 @@ const ChatArea: Component<ChatAreaProps> = (props) => {
       // Listen to messages
       try {
         unsubscribe = messageService.listenToMessages(
-          props.currentUser.id,
-          props.selectedUser.id,
+          currentUser.id,
+          selectedUser.id,
           (msgs) => {
             setMessages(msgs);
 
             // Mark messages as read whenever we receive new messages in an open conversation
             // This ensures inbox notifications are cleared in real-time
             messageService
-              .markMessagesAsRead(props.currentUser.id, props.selectedUser.id)
+              .markMessagesAsRead(currentUser.id, selectedUser.id)
               .catch((error) => {
                 // Silently handle auto-mark read errors
               });
@@ -138,12 +145,12 @@ const ChatArea: Component<ChatAreaProps> = (props) => {
       }
 
       // Listen to typing indicator
-      const conversationId = [props.currentUser.id, props.selectedUser.id]
+      const conversationId = [currentUser.id, selectedUser.id]
         .sort()
         .join("_");
       typingUnsubscribe = typingService.listenToTyping(
         conversationId,
-        props.currentUser.id,
+        currentUser.id,
         (typingUsers) => {
           // Check if anyone (other than current user) is typing
           setIsOtherUserTyping(typingUsers.length > 0);
