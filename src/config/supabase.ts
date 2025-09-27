@@ -17,8 +17,11 @@ if (!supabaseUrl || !supabaseAnonKey) {
   throw new Error(`Missing Supabase environment variables for mode: ${supabaseMode}`)
 }
 
-console.log(`🚀 Using Supabase mode: ${supabaseMode}`)
-console.log(`📡 Supabase URL: ${supabaseUrl}`)
+// Only log Supabase config in development
+if (import.meta.env.DEV) {
+  console.log(`🚀 Using Supabase mode: ${supabaseMode}`)
+  console.log(`📡 Supabase URL: ${supabaseUrl}`)
+}
 
 export const supabase = createClient<Database>(supabaseUrl, supabaseAnonKey, {
   auth: {
