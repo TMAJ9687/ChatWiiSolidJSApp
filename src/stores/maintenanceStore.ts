@@ -1,7 +1,7 @@
 import { createSignal } from "solid-js";
 
 // Global maintenance mode state
-const [isMaintenanceMode, setMaintenanceMode] = createSignal(true);
+const [isMaintenanceMode, setMaintenanceMode] = createSignal(false);
 
 export const maintenanceStore = {
   isMaintenanceMode,

@@ -94,7 +94,10 @@
       "Bash(awk:*)",
       "Bash(npm audit:*)",
       "Bash(git revert:*)",
-      "Bash(grep:*)"
+      "Bash(grep:*)",
+      "Bash(npm ls:*)",
+      "Bash(timeout 10 npm run dev)",
+      "Bash(npm run migrate:*)"
     ],
     "deny": [],
     "ask": []

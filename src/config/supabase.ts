@@ -1,12 +1,24 @@
 import { createClient } from '@supabase/supabase-js'
 import type { Database } from '../types/database.types'
 
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY
+// Get environment mode (old or new Supabase)
+const supabaseMode = import.meta.env.VITE_SUPABASE_MODE || 'old'
+
+// Select the appropriate credentials based on mode
+const supabaseUrl = supabaseMode === 'new'
+  ? import.meta.env.VITE_NEW_SUPABASE_URL
+  : import.meta.env.VITE_SUPABASE_URL
+
+const supabaseAnonKey = supabaseMode === 'new'
+  ? import.meta.env.VITE_NEW_SUPABASE_ANON_KEY
+  : import.meta.env.VITE_SUPABASE_ANON_KEY
 
 if (!supabaseUrl || !supabaseAnonKey) {
-  throw new Error('Missing Supabase environment variables')
+  throw new Error(`Missing Supabase environment variables for mode: ${supabaseMode}`)
 }
+
+console.log(`🚀 Using Supabase mode: ${supabaseMode}`)
+console.log(`📡 Supabase URL: ${supabaseUrl}`)
 
 export const supabase = createClient<Database>(supabaseUrl, supabaseAnonKey, {
   auth: {

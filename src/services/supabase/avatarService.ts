@@ -1,4 +1,6 @@
 import { supabase } from "../../config/supabase";
+import { imagekitConfig } from "../../config/imagekit";
+import { imagekitService } from "./imagekitService";
 import type { AdminActionResult } from "../../types/admin.types";
 import { createServiceLogger } from "../../utils/logger";
 
@@ -52,28 +54,41 @@ class AvatarService {
         };
       }
 
-      // Generate unique filename
-      const fileExtension = uploadRequest.file.name.split('.').pop();
-      const fileName = `${uploadRequest.type}/${uploadRequest.gender}/${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExtension}`;
+      let avatarUrl: string;
+      let fileName: string;
 
-      // Upload file to Supabase Storage
-      const { data: uploadData, error: uploadError } = await supabase.storage
-        .from(this.AVATAR_BUCKET)
-        .upload(fileName, uploadRequest.file, {
-          cacheControl: '3600',
-          upsert: false
-        });
+      // Use ImageKit if configured, otherwise use Supabase Storage
+      if (imagekitConfig.isConfigured) {
+        logger.info('Using ImageKit for avatar upload');
+        // For ImageKit, we'll use the avatar service's method
+        avatarUrl = await imagekitService.uploadAvatar(uploadRequest.file, `${uploadRequest.type}-${uploadRequest.gender}`);
+        fileName = avatarUrl.split('/').pop() || 'avatar';
+      } else {
+        logger.info('Using Supabase Storage for avatar upload (ImageKit not configured)');
 
-      if (uploadError) {
-        throw new Error(uploadError.message);
+        // Generate unique filename
+        const fileExtension = uploadRequest.file.name.split('.').pop();
+        fileName = `${uploadRequest.type}/${uploadRequest.gender}/${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExtension}`;
+
+        // Upload file to Supabase Storage
+        const { data: uploadData, error: uploadError } = await supabase.storage
+          .from(this.AVATAR_BUCKET)
+          .upload(fileName, uploadRequest.file, {
+            cacheControl: '3600',
+            upsert: false
+          });
+
+        if (uploadError) {
+          throw new Error(uploadError.message);
+        }
+
+        // Get public URL
+        const { data: urlData } = supabase.storage
+          .from(this.AVATAR_BUCKET)
+          .getPublicUrl(fileName);
+
+        avatarUrl = urlData.publicUrl;
       }
-
-      // Get public URL
-      const { data: urlData } = supabase.storage
-        .from(this.AVATAR_BUCKET)
-        .getPublicUrl(fileName);
-
-      const avatarUrl = urlData.publicUrl;
 
       // Save avatar metadata to database
       const { data: avatarData, error: dbError } = await supabase
@@ -544,28 +559,40 @@ class AvatarService {
         };
       }
 
-      // Generate unique filename for admin avatar
-      const fileExtension = file.name.split('.').pop();
-      const fileName = `admin/${adminId}-${Date.now()}.${fileExtension}`;
+      let avatarUrl: string;
+      let fileName: string;
 
-      // Upload file to Supabase Storage
-      const { data: uploadData, error: uploadError } = await supabase.storage
-        .from(this.AVATAR_BUCKET)
-        .upload(fileName, file, {
-          cacheControl: '3600',
-          upsert: true // Allow overwriting existing admin avatar
-        });
+      // Use ImageKit if configured, otherwise use Supabase Storage
+      if (imagekitConfig.isConfigured) {
+        logger.info('Using ImageKit for admin avatar upload');
+        avatarUrl = await imagekitService.uploadAvatar(file, `admin-${adminId}`);
+        fileName = avatarUrl.split('/').pop() || 'admin-avatar';
+      } else {
+        logger.info('Using Supabase Storage for admin avatar upload (ImageKit not configured)');
 
-      if (uploadError) {
-        throw new Error(uploadError.message);
+        // Generate unique filename for admin avatar
+        const fileExtension = file.name.split('.').pop();
+        fileName = `admin/${adminId}-${Date.now()}.${fileExtension}`;
+
+        // Upload file to Supabase Storage
+        const { data: uploadData, error: uploadError } = await supabase.storage
+          .from(this.AVATAR_BUCKET)
+          .upload(fileName, file, {
+            cacheControl: '3600',
+            upsert: true // Allow overwriting existing admin avatar
+          });
+
+        if (uploadError) {
+          throw new Error(uploadError.message);
+        }
+
+        // Get public URL
+        const { data: urlData } = supabase.storage
+          .from(this.AVATAR_BUCKET)
+          .getPublicUrl(fileName);
+
+        avatarUrl = urlData.publicUrl;
       }
-
-      // Get public URL
-      const { data: urlData } = supabase.storage
-        .from(this.AVATAR_BUCKET)
-        .getPublicUrl(fileName);
-
-      const avatarUrl = urlData.publicUrl;
 
       // Update admin user's avatar
       const { error: updateError } = await supabase

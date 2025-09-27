@@ -14,7 +14,9 @@
     "test:ui": "vitest --ui",
     "test:services": "vitest run src/services/supabase/__tests__",
     "test:components": "vitest run src/components",
-    "test:report": "vitest run --coverage --reporter=verbose"
+    "test:report": "vitest run --coverage --reporter=verbose",
+    "migrate": "node migration-helper.cjs",
+    "setup:supabase": "node update-supabase-config.cjs"
   },
   "license": "MIT",
   "devDependencies": {
@@ -36,6 +38,7 @@
     "@solidjs/meta": "^0.29.4",
     "@solidjs/router": "^0.15.3",
     "@supabase/supabase-js": "^2.57.0",
+    "imagekit": "^6.0.0",
     "solid-icons": "^1.1.0",
     "solid-js": "^1.9.9"
   }
