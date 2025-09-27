@@ -85,8 +85,8 @@ class IdleService {
     }
 
     if (this.navigate) {
-      // Navigate directly to feedback page
-      this.navigate("/feedback");
+      // Navigate directly to landing page (feedback disabled)
+      this.navigate("/");
     }
   }
 

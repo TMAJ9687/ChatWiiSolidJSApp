@@ -68,7 +68,7 @@ const Idle: Component = () => {
   const handleNewSession = async () => {
     // Clean up current session and start fresh
     await authService.signOut();
-    navigate("/feedback");
+    navigate("/");
   };
 
   return (

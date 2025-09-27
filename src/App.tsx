@@ -10,7 +10,7 @@ const Chat = lazy(() => import("./pages/Chat"));
 const Admin = lazy(() => import("./pages/Admin"));
 const AdminLogin = lazy(() => import("./pages/AdminLogin"));
 const Idle = lazy(() => import('./pages/Idle'));
-const Feedback = lazy(() => import("./pages/Feedback"));
+// const Feedback = lazy(() => import("./pages/Feedback"));
 const About = lazy(() => import("./pages/About"));
 const Privacy = lazy(() => import("./pages/Privacy"));
 const Safety = lazy(() => import("./pages/Safety"));
@@ -59,7 +59,7 @@ const App: Component = () => {
         <Route path="/admin" component={Admin} />
         <Route path="/sys/mgmt/admin" component={AdminLogin} />
         <Route path="/idle" component={Idle} />
-        <Route path="/feedback" component={Feedback} />
+        {/* <Route path="/feedback" component={Feedback} /> */}
         <Route path="/about" component={About} />
         <Route path="/privacy" component={Privacy} />
         <Route path="/safety" component={Safety} />

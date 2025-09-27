@@ -59,6 +59,12 @@ class SessionManager {
 
   // Refresh session proactively
   private async refreshSession(): Promise<void> {
+    // Don't refresh if session is already invalid or user is null
+    if (!this.sessionValid || !this.user) {
+      logger.debug("Skipping session refresh - session invalid or user logged out");
+      return;
+    }
+
     try {
       logger.info("Proactively refreshing session...");
 
@@ -93,9 +99,9 @@ class SessionManager {
       logger.error("Error during session cleanup:", error);
     }
 
-    // Redirect to feedback page
+    // Redirect to landing page (feedback disabled)
     if (this.navigateFunction) {
-      this.navigateFunction("/feedback");
+      this.navigateFunction("/");
     }
   }
 
@@ -187,7 +193,8 @@ class SessionManager {
     this.lastSessionCheck = Date.now();
 
     // If session was marked invalid but user is active, try to refresh
-    if (!this.sessionValid) {
+    // But only if user is still logged in
+    if (!this.sessionValid && this.user) {
       logger.info("User active with invalid session, attempting refresh...");
       this.refreshSession();
     }

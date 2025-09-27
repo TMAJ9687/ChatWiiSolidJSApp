@@ -73,11 +73,11 @@ const ChatHeader: Component<ChatHeaderProps> = (props) => {
       await authService.signOut();
     } catch (error) {
       console.warn("Logout error (expected during session expiry):", error);
-      // Continue to feedback even if logout has errors
+      // Continue to landing page even if logout has errors
     }
 
-    // Always navigate to feedback regardless of logout errors
-    navigate("/feedback");
+    // Always navigate to landing page regardless of logout errors
+    navigate("/");
   };
 
   const handleLogoutCancel = () => {
