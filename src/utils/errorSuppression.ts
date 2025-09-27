@@ -94,16 +94,18 @@ class NetworkErrorSuppression {
       }
     });
 
-    // Override fetch to suppress network errors in production
+    // Override fetch ONLY for photo_usage errors - don't interfere with auth
     const originalFetch = window.fetch;
     window.fetch = async (...args) => {
-      try {
-        const response = await originalFetch(...args);
+      const url = typeof args[0] === 'string' ? args[0] : args[0]?.url || '';
 
-        // Suppress 406 photo_usage errors from being logged
-        if (!response.ok && response.status === 406) {
-          const url = typeof args[0] === 'string' ? args[0] : args[0]?.url || '';
-          if (url.includes('photo_usage')) {
+      // Only intercept photo_usage requests, leave everything else alone
+      if (url.includes('photo_usage')) {
+        try {
+          const response = await originalFetch(...args);
+
+          // Suppress 406 photo_usage errors from being logged
+          if (!response.ok && response.status === 406) {
             // Return a fake successful response to prevent error logging
             return new Response(JSON.stringify({ count: 0 }), {
               status: 200,
@@ -111,23 +113,20 @@ class NetworkErrorSuppression {
               headers: { 'Content-Type': 'application/json' }
             });
           }
-        }
 
-        return response;
-      } catch (error) {
-        // Suppress photo_usage related fetch errors
-        if (error instanceof Error &&
-            (error.message.includes('photo_usage') ||
-             (typeof args[0] === 'string' && args[0].includes('photo_usage')))) {
-          // Return a fake successful response
+          return response;
+        } catch (error) {
+          // Suppress photo_usage related fetch errors
           return new Response(JSON.stringify({ count: 0 }), {
             status: 200,
             statusText: 'OK',
             headers: { 'Content-Type': 'application/json' }
           });
         }
-        throw error;
       }
+
+      // For all other requests (auth, etc.), use original fetch without interference
+      return originalFetch(...args);
     };
 
     // Override Image constructor to handle 404s silently
