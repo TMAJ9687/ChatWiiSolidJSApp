@@ -128,33 +128,57 @@ class ImageKitService {
     }
   }
 
-  // Direct upload to ImageKit using fetch
+  // Direct upload to ImageKit using client-side API
   private async uploadToImageKit(
     file: File,
     fileName: string,
     onProgress?: (progress: number) => void
   ): Promise<{ url: string; fileId: string }> {
-    // For now, we'll simulate the upload and return a mock response
-    // In production, you would implement proper ImageKit upload with authentication endpoint
-    logger.warn('ImageKit upload is simulated - implement authentication endpoint for production');
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('fileName', fileName);
+    formData.append('publicKey', imagekitConfig.publicKey);
 
-    // Simulate upload progress
-    if (onProgress) {
-      const intervals = [10, 30, 50, 70, 90, 100];
-      for (const progress of intervals) {
-        await new Promise(resolve => setTimeout(resolve, 100));
-        onProgress(progress);
+    // For client-side uploads without authentication endpoint
+    formData.append('useUniqueFileName', 'true');
+    formData.append('tags', 'chatwii,chat-image');
+
+    return new Promise((resolve, reject) => {
+      const xhr = new XMLHttpRequest();
+
+      // Track upload progress
+      if (onProgress) {
+        xhr.upload.addEventListener('progress', (event) => {
+          if (event.lengthComputable) {
+            const progress = (event.loaded / event.total) * 100;
+            onProgress(progress);
+          }
+        });
       }
-    }
 
-    // For development, we'll use a placeholder service that returns mock URLs
-    // In production, replace this with actual ImageKit upload
-    const mockUrl = `${imagekitConfig.urlEndpoint || 'https://via.placeholder.com'}/600x400/0066cc/ffffff?text=${encodeURIComponent(fileName)}`;
+      xhr.onload = () => {
+        if (xhr.status === 200) {
+          try {
+            const response = JSON.parse(xhr.responseText);
+            resolve({
+              url: response.url,
+              fileId: response.fileId
+            });
+          } catch (error) {
+            reject(new Error('Invalid response from ImageKit'));
+          }
+        } else {
+          reject(new Error(`Upload failed with status: ${xhr.status}`));
+        }
+      };
 
-    return {
-      url: mockUrl,
-      fileId: `mock_${Date.now()}_${Math.random().toString(36).substring(7)}`
-    };
+      xhr.onerror = () => {
+        reject(new Error('Network error during upload'));
+      };
+
+      xhr.open('POST', 'https://upload.imagekit.io/api/v1/files/upload');
+      xhr.send(formData);
+    });
   }
 
   // Delete image from ImageKit
