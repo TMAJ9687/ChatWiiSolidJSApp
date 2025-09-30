@@ -1,444 +1,393 @@
 import { supabase } from "../../config/supabase";
 import type { User } from "../../types/user.types";
-import type { RealtimeChannel } from "@supabase/supabase-js";
 import { createServiceLogger } from "../../utils/logger";
-import { sessionManager } from "../sessionManager";
-import { authProxy } from "../authProxy";
 
 const logger = createServiceLogger('PresenceService');
 
-interface PresenceData {
+export interface PresenceUser {
   user_id: string;
-  online: boolean;
-  last_seen: string;
   nickname: string;
-  gender: "male" | "female";
+  gender: 'male' | 'female';
   age: number;
   country: string;
-  role: string;
+  role: 'standard' | 'vip' | 'admin';
   avatar: string;
+  online: boolean;
+  last_seen: string;
   joined_at: string;
 }
 
 class PresenceService {
-  private presenceChannel: RealtimeChannel | null = null;
-  private heartbeatInterval: NodeJS.Timeout | null = null;
-  private cleanupTimeoutInterval: NodeJS.Timeout | null = null;
-  private listeners: (() => void)[] = [];
-  private lastActivityUpdate: number = 0;
-  private activityUpdateThrottle: number = 30000; // 30 seconds throttle
+  private heartbeatInterval: number | null = null;
+  private sessionId: string;
   private currentUserId: string | null = null;
-  private browserEventsSetup: boolean = false;
-  // Store actual handler references for proper cleanup
-  private browserHandlers: {
-    handleBeforeUnload?: (e: BeforeUnloadEvent) => any;
-    handleUnload?: () => void;
-    handleVisibilityChange?: () => void;
-  } = {};
+  private readonly HEARTBEAT_INTERVAL = 30000; // 30 seconds
+  private readonly CLEANUP_INTERVAL = 60000; // 1 minute
+  private cleanupInterval: number | null = null;
 
-  // Set user online
-  async setUserOnline(user: User): Promise<void> {
-    const userId = user.id;
-    this.currentUserId = userId;
-    
-    // Set up browser event handlers for cleanup
-    this.setupBrowserEventHandlers();
-    
-    // Set up enhanced cleanup for this user
-    const { enhancedCleanupService } = await import('./enhancedCleanupService');
-    enhancedCleanupService.setupBrowserCleanupHandlers(user);
-    
-    const presenceData: PresenceData = {
-      user_id: user.id,
-      online: true,
-      last_seen: new Date().toISOString(),
-      nickname: user.nickname,
-      gender: user.gender,
-      age: user.age,
-      country: user.country,
-      role: user.role,
-      avatar: user.avatar || `/avatars/standard/${user.gender}.png`,
-      joined_at: new Date().toISOString(),
-    };
+  constructor() {
+    this.sessionId = this.generateSessionId();
+    this.setupBeforeUnloadHandler();
+    this.startCleanupScheduler();
+  }
 
+  // Generate unique session ID
+  private generateSessionId(): string {
+    return `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+  }
+
+  // Setup handler for when user closes browser/tab
+  private setupBeforeUnloadHandler(): void {
+    if (typeof window !== 'undefined') {
+      // Handle page unload (browser close, tab close, navigation)
+      window.addEventListener('beforeunload', () => {
+        if (this.currentUserId) {
+          // Use sendBeacon for reliable delivery even when page is unloading
+          const data = JSON.stringify({
+            user_id: this.currentUserId,
+            session_id: this.sessionId
+          });
+          
+          if (navigator.sendBeacon) {
+            // This is the most reliable way to send data on page unload
+            navigator.sendBeacon('/api/user-disconnect', data);
+          }
+          
+          // Also try the synchronous approach as fallback
+          this.markOfflineSync();
+        }
+      });
+
+      // Handle visibility change (tab switching, minimizing)
+      document.addEventListener('visibilitychange', () => {
+        if (document.hidden) {
+          // User switched away from tab - reduce heartbeat frequency
+          this.reduceHeartbeatFrequency();
+        } else {
+          // User returned to tab - resume normal heartbeat
+          this.resumeNormalHeartbeat();
+        }
+      });
+
+      // Handle online/offline events
+      window.addEventListener('offline', () => {
+        logger.debug('User went offline');
+        if (this.currentUserId) {
+          this.markOffline(this.currentUserId);
+        }
+      });
+
+      window.addEventListener('online', () => {
+        logger.debug('User came back online');
+        if (this.currentUserId) {
+          this.sendHeartbeat();
+        }
+      });
+    }
+  }
+
+  // Start the cleanup scheduler
+  private startCleanupScheduler(): void {
+    if (this.cleanupInterval) {
+      clearInterval(this.cleanupInterval);
+    }
+
+    this.cleanupInterval = window.setInterval(async () => {
+      try {
+        await this.runScheduledCleanup();
+      } catch (error) {
+        logger.error('Error in scheduled cleanup:', error);
+      }
+    }, this.CLEANUP_INTERVAL);
+  }
+
+  // Join user to presence system
+  async joinPresence(userId: string): Promise<void> {
     try {
-      // Upsert user presence in database
-      const { error } = await supabase
-        .from("presence")
-        .upsert([presenceData], {
-          onConflict: "user_id"
-        });
+      this.currentUserId = userId;
+      
+      // Update user heartbeat and mark as online
+      const { error } = await supabase.rpc('update_user_heartbeat', {
+        p_user_id: userId,
+        p_session_id: this.sessionId,
+        p_user_agent: navigator.userAgent,
+        p_ip_address: null // Will be set by server if needed
+      });
 
       if (error) {
-        logger.error("Error setting user online:", error);
-        throw error;
+        throw new Error(error.message);
       }
 
-      // Set up realtime presence channel
-      this.presenceChannel = supabase.channel(`presence:${userId}`, {
-        config: {
-          presence: {
-            key: userId,
-          },
-        },
-      });
+      // Start heartbeat interval
+      this.startHeartbeat();
 
-      // Track user in realtime presence
-      await this.presenceChannel
-        .on("presence", { event: "sync" }, () => {
-          // Handle presence sync
-        })
-        .on("presence", { event: "join" }, ({ key, newPresences }) => {
-          // Handle user join
-        })
-        .on("presence", { event: "leave" }, ({ key, leftPresences }) => {
-          // Handle user leave
-        })
-        .subscribe(async (status) => {
-          if (status === "SUBSCRIBED") {
-            // Track this user's presence
-            await this.presenceChannel?.track(presenceData);
-          }
-        });
-
-      // SAFE HEARTBEAT: Update activity without auth calls to prevent cleanup
-      this.heartbeatInterval = setInterval(() => {
-        this.updateActivitySafe(userId);
-      }, 60000); // 1 minute intervals (reduced frequency)
-
-      // Set up automatic cleanup for stale users every 10 minutes
-      this.cleanupTimeoutInterval = setInterval(() => {
-        this.cleanupStaleUsers();
-      }, 600000); // 10 minutes
-
-      this.listeners.push(() => {
-        if (this.heartbeatInterval) {
-          clearInterval(this.heartbeatInterval);
-          this.heartbeatInterval = null;
-        }
-        if (this.cleanupTimeoutInterval) {
-          clearInterval(this.cleanupTimeoutInterval);
-          this.cleanupTimeoutInterval = null;
-        }
-      });
+      logger.debug(`User ${userId} joined presence with session ${this.sessionId}`);
     } catch (error) {
-      logger.error("Error setting up presence:", error);
+      logger.error('Error joining presence:', error);
       throw error;
     }
   }
 
-  // Set user offline and cleanup
-  async setUserOffline(userId: string): Promise<void> {
+  // Leave presence system
+  async leavePresence(): Promise<void> {
     try {
-      // First, remove from presence table (most important for user list)
-      await supabase
-        .from("presence")
-        .delete()
-        .eq("user_id", userId);
-
-      // Update any remaining presence records to offline
-      await supabase
-        .from("presence")
-        .update({
-          online: false,
-          last_seen: new Date().toISOString()
-        })
-        .eq("user_id", userId);
-
-      // Clean up heartbeat and intervals first
-      if (this.heartbeatInterval) {
-        clearInterval(this.heartbeatInterval);
-        this.heartbeatInterval = null;
+      if (this.currentUserId) {
+        await this.markOffline(this.currentUserId);
+        this.currentUserId = null;
       }
-
-      if (this.cleanupTimeoutInterval) {
-        clearInterval(this.cleanupTimeoutInterval);
-        this.cleanupTimeoutInterval = null;
-      }
-
-      // Clean up all listeners
-      this.listeners.forEach((cleanup) => cleanup());
-      this.listeners = [];
-
-      // Finally, unsubscribe from presence channel
-      if (this.presenceChannel) {
-        await this.presenceChannel.unsubscribe();
-        this.presenceChannel = null;
-      }
+      
+      this.stopHeartbeat();
+      logger.debug('Left presence system');
     } catch (error) {
-      logger.error("Error setting user offline:", error);
+      logger.error('Error leaving presence:', error);
     }
   }
 
-  // Listen to online users
-  listenToOnlineUsers(callback: (users: User[]) => void): () => void {
-    // Set up realtime subscription for presence table
-    const subscription = supabase
-      .channel("presence-table")
-      .on("postgres_changes", {
-        event: "*",
-        schema: "public",
-        table: "presence"
-      }, (payload) => {
-        // Refresh online users when presence changes
-        this.getOnlineUsers().then(callback);
-      })
-      .subscribe();
+  // Start sending heartbeats
+  private startHeartbeat(): void {
+    if (this.heartbeatInterval) {
+      clearInterval(this.heartbeatInterval);
+    }
 
-    // Also get initial online users
-    this.getOnlineUsers().then(callback);
+    this.heartbeatInterval = window.setInterval(() => {
+      this.sendHeartbeat();
+    }, this.HEARTBEAT_INTERVAL);
 
-    // Return unsubscribe function
-    return () => {
-      subscription.unsubscribe();
-    };
+    // Send initial heartbeat
+    this.sendHeartbeat();
   }
 
-  // Get online users from database
-  private async getOnlineUsers(): Promise<User[]> {
+  // Stop sending heartbeats
+  private stopHeartbeat(): void {
+    if (this.heartbeatInterval) {
+      clearInterval(this.heartbeatInterval);
+      this.heartbeatInterval = null;
+    }
+  }
+
+  // Send heartbeat to keep user marked as online
+  private async sendHeartbeat(): Promise<void> {
+    if (!this.currentUserId) return;
+
     try {
-      const { data, error } = await supabase
-        .from("presence")
-        .select("*")
-        .eq("online", true)
-        .order("joined_at", { ascending: false });
+      const { error } = await supabase.rpc('update_user_heartbeat', {
+        p_user_id: this.currentUserId,
+        p_session_id: this.sessionId
+      });
 
       if (error) {
-        logger.error("Error fetching online users:", error);
-        return [];
+        logger.error('Heartbeat error:', error);
+        // Try to reconnect on next heartbeat
+      }
+    } catch (error) {
+      logger.error('Error sending heartbeat:', error);
+    }
+  }
+
+  // Mark user as offline
+  async markOffline(userId: string): Promise<void> {
+    try {
+      const { error } = await supabase.rpc('handle_user_disconnect', {
+        p_user_id: userId,
+        p_session_id: this.sessionId
+      });
+
+      if (error) {
+        logger.error('Error marking user offline:', error);
+      }
+    } catch (error) {
+      logger.error('Error in markOffline:', error);
+    }
+  }
+
+  // Synchronous version for page unload
+  private markOfflineSync(): void {
+    if (!this.currentUserId) return;
+
+    try {
+      // Use fetch with keepalive for better reliability during page unload
+      fetch('/api/user-disconnect', {
+        method: 'POST',
+        keepalive: true,
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          user_id: this.currentUserId,
+          session_id: this.sessionId
+        })
+      }).catch(error => {
+        logger.error('Error in sync offline:', error);
+      });
+    } catch (error) {
+      logger.error('Error in markOfflineSync:', error);
+    }
+  }
+
+  // Get list of active users
+  async getActiveUsers(): Promise<PresenceUser[]> {
+    try {
+      const { data, error } = await supabase.rpc('get_active_users');
+
+      if (error) {
+        throw new Error(error.message);
       }
 
-      // Convert to User format
-      return (data || []).map((presence: PresenceData) => ({
-        id: presence.user_id,
-        nickname: presence.nickname,
-        gender: presence.gender,
-        age: presence.age,
-        country: presence.country,
-        role: presence.role,
-        status: "active" as const,
-        online: presence.online,
-        avatar: presence.avatar,
-        createdAt: presence.joined_at,
-      }));
+      return data || [];
     } catch (error) {
-      logger.error("Error getting online users:", error);
+      logger.error('Error getting active users:', error);
       return [];
     }
   }
 
-  // Update user activity (safe version using sessionManager)
-  updateActivity(userId: string): void {
-    // Simply update session manager activity - no risky DB calls
-    sessionManager.updateActivity();
+  // Subscribe to presence changes
+  subscribeToPresenceChanges(
+    onUserJoined: (user: PresenceUser) => void,
+    onUserLeft: (userId: string) => void,
+    onUserUpdated: (user: PresenceUser) => void
+  ): () => void {
+    const channel = supabase
+      .channel('presence_changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'presence'
+        },
+        (payload) => {
+          const eventType = payload.eventType;
+          const user = payload.new as PresenceUser;
+          const oldUser = payload.old as PresenceUser;
 
-    // Update throttle timestamp
-    this.lastActivityUpdate = Date.now();
-  }
-
-  // SAFE activity update for heartbeat - uses authProxy protection
-  private updateActivitySafe(userId: string): void {
-    // Use authProxy to safely update last_seen without causing auth loops
-    authProxy.safeDbOperation(async () => {
-      const { error } = await supabase
-        .from("presence")
-        .update({
-          last_seen: new Date().toISOString(),
-          online: true
-        })
-        .eq("user_id", userId);
-
-      if (error) {
-        // Don't throw - this is background maintenance
-        logger.debug("Heartbeat update failed (expected during auth issues):", error.message);
-      }
-
-      return true;
-    }).catch(() => {
-      // Silent fail - heartbeat is not critical, just prevents cleanup
-    });
-
-    // Also update session manager
-    sessionManager.updateActivity();
-    this.lastActivityUpdate = Date.now();
-  }
-
-  // Check if user exists online (for nickname uniqueness)
-  async isNicknameOnline(nickname: string): Promise<boolean> {
-    try {
-      const { data, error } = await supabase
-        .from("presence")
-        .select("user_id")
-        .eq("online", true)
-        .ilike("nickname", nickname);
-
-      if (error) {
-        logger.error("Error checking nickname:", error);
-        return false;
-      }
-
-      return (data?.length || 0) > 0;
-    } catch (error) {
-      logger.error("Error checking nickname:", error);
-      return false;
-    }
-  }
-
-  // Get online user count
-  async getOnlineCount(): Promise<number> {
-    try {
-      const { count, error } = await supabase
-        .from("presence")
-        .select("*", { count: "exact", head: true })
-        .eq("online", true);
-
-      if (error) {
-        logger.error("Error getting online count:", error);
-        return 0;
-      }
-
-      return count || 0;
-    } catch (error) {
-      logger.error("Error getting online count:", error);
-      return 0;
-    }
-  }
-
-  // Clean up all resources
-  async cleanup(): Promise<void> {
-    if (this.currentUserId) {
-      await this.setUserOffline(this.currentUserId);
-    }
-    this.removeBrowserEventHandlers();
-    
-    // Clean up enhanced cleanup handlers
-    const { enhancedCleanupService } = await import('./enhancedCleanupService');
-    enhancedCleanupService.removeBrowserCleanupHandlers();
-  }
-
-  // Set up browser event handlers for proper cleanup
-  private setupBrowserEventHandlers(): void {
-    if (this.browserEventsSetup) return;
-
-    // Handle tab close, refresh, navigation away
-    this.browserHandlers.handleBeforeUnload = () => {
-      if (this.currentUserId) {
-        // Try immediate synchronous cleanup first (most reliable)
-        try {
-          // Use synchronous XMLHttpRequest for better reliability during unload
-          const xhr = new XMLHttpRequest();
-          const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-          const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
-
-          // Immediate presence deletion (most critical)
-          xhr.open('DELETE', `${supabaseUrl}/rest/v1/presence?user_id=eq.${this.currentUserId}`, false);
-          xhr.setRequestHeader('apikey', anonKey);
-          xhr.setRequestHeader('Authorization', `Bearer ${anonKey}`);
-          xhr.send();
-        } catch (error) {
-          logger.warn('Sync cleanup failed:', error);
+          if (eventType === 'INSERT' && user?.online) {
+            onUserJoined(user);
+          } else if (eventType === 'DELETE' || (eventType === 'UPDATE' && !user?.online)) {
+            const userId = user?.user_id || oldUser?.user_id;
+            if (userId) {
+              onUserLeft(userId);
+            }
+          } else if (eventType === 'UPDATE' && user?.online) {
+            onUserUpdated(user);
+          }
         }
+      )
+      .subscribe();
 
-        // Backup: Use sendBeacon for emergency cleanup
-        if (navigator.sendBeacon) {
-          const cleanupPayload = JSON.stringify({
-            user_id: this.currentUserId,
-            cleanup_timestamp: new Date().toISOString()
-          });
-
-          const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-          const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
-
-          // Try sendBeacon to emergency function
-          navigator.sendBeacon(
-            `${supabaseUrl}/rest/v1/rpc/emergency_user_offline?apikey=${anonKey}`,
-            new Blob([cleanupPayload], {
-              type: 'application/json'
-            })
-          );
-        }
-
-        // Also try async cleanup (might not complete but worth trying)
-        this.setUserOffline(this.currentUserId);
-      }
+    return () => {
+      supabase.removeChannel(channel);
     };
-
-    this.browserHandlers.handleUnload = () => {
-      if (this.currentUserId) {
-        // Final attempt at cleanup with synchronous request
-        try {
-          const xhr = new XMLHttpRequest();
-          const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-          const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
-
-          // Quick synchronous presence deletion
-          xhr.open('DELETE', `${supabaseUrl}/rest/v1/presence?user_id=eq.${this.currentUserId}`, false);
-          xhr.setRequestHeader('apikey', anonKey);
-          xhr.setRequestHeader('Authorization', `Bearer ${anonKey}`);
-          xhr.send();
-        } catch (error) {
-          // Silently fail - this is a last-ditch effort
-        }
-      }
-    };
-
-    // DISABLED: Visibility change was causing mobile users to disappear from list
-    // this.browserHandlers.handleVisibilityChange = () => {
-    //   if (document.hidden && this.currentUserId) {
-    //     this.updateActivity(this.currentUserId);
-    //   }
-    // };
-
-    window.addEventListener('beforeunload', this.browserHandlers.handleBeforeUnload);
-    window.addEventListener('unload', this.browserHandlers.handleUnload);
-    window.addEventListener('pagehide', this.browserHandlers.handleUnload);
-    // DISABLED: visibilitychange was causing mobile users to disappear
-    // document.addEventListener('visibilitychange', this.browserHandlers.handleVisibilityChange);
-
-    this.browserEventsSetup = true;
   }
 
-  // Remove browser event handlers
-  private removeBrowserEventHandlers(): void {
-    if (!this.browserEventsSetup) return;
-
-    // Remove actual handler references
-    if (this.browserHandlers.handleBeforeUnload) {
-      window.removeEventListener('beforeunload', this.browserHandlers.handleBeforeUnload);
-    }
-    if (this.browserHandlers.handleUnload) {
-      window.removeEventListener('unload', this.browserHandlers.handleUnload);
-      window.removeEventListener('pagehide', this.browserHandlers.handleUnload);
-    }
-    if (this.browserHandlers.handleVisibilityChange) {
-      document.removeEventListener('visibilitychange', this.browserHandlers.handleVisibilityChange);
-    }
-
-    // Clear handler references
-    this.browserHandlers = {};
-    this.browserEventsSetup = false;
-  }
-
-  // Clean up stale users (no activity for more than 1 hour)
-  private async cleanupStaleUsers(): Promise<void> {
+  // Run scheduled cleanup
+  private async runScheduledCleanup(): Promise<void> {
     try {
-      const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000).toISOString();
+      const { error } = await supabase.rpc('scheduled_presence_cleanup');
       
-      const { error } = await supabase
-        .from("presence")
-        .update({ online: false })
-        .lt('last_seen', oneHourAgo)
+      if (error) {
+        logger.error('Scheduled cleanup error:', error);
+      }
+    } catch (error) {
+      logger.error('Error in scheduled cleanup:', error);
+    }
+  }
+
+  // Reduce heartbeat frequency when tab is not visible
+  private reduceHeartbeatFrequency(): void {
+    if (this.heartbeatInterval) {
+      clearInterval(this.heartbeatInterval);
+      // Reduce to every 2 minutes when tab is hidden
+      this.heartbeatInterval = window.setInterval(() => {
+        this.sendHeartbeat();
+      }, 120000);
+    }
+  }
+
+  // Resume normal heartbeat frequency
+  private resumeNormalHeartbeat(): void {
+    if (this.currentUserId) {
+      this.startHeartbeat();
+    }
+  }
+
+  // Manual cleanup trigger (for admin use)
+  async triggerCleanup(): Promise<{ cleaned: number }> {
+    try {
+      const { data, error } = await supabase.rpc('cleanup_stale_presence');
+
+      if (error) {
+        throw new Error(error.message);
+      }
+
+      return { cleaned: data || 0 };
+    } catch (error) {
+      logger.error('Error triggering cleanup:', error);
+      return { cleaned: 0 };
+    }
+  }
+
+  // Get presence statistics
+  async getPresenceStats(): Promise<{
+    totalOnline: number;
+    totalUsers: number;
+    staleUsers: number;
+  }> {
+    try {
+      const { data: onlineData, error: onlineError } = await supabase
+        .from('presence')
+        .select('user_id', { count: 'exact' })
         .eq('online', true);
 
-      if (error) {
-        logger.error('Error cleaning up stale users:', error);
-      } else {
-        // Cleaned up stale users
+      const { data: totalData, error: totalError } = await supabase
+        .from('users')
+        .select('id', { count: 'exact' })
+        .eq('status', 'active');
+
+      const { data: staleData, error: staleError } = await supabase
+        .from('presence')
+        .select('user_id', { count: 'exact' })
+        .eq('online', true)
+        .lt('heartbeat_at', new Date(Date.now() - 2 * 60 * 1000).toISOString());
+
+      if (onlineError || totalError || staleError) {
+        throw new Error('Error fetching presence stats');
       }
+
+      return {
+        totalOnline: onlineData?.length || 0,
+        totalUsers: totalData?.length || 0,
+        staleUsers: staleData?.length || 0
+      };
     } catch (error) {
-      logger.error('Error in cleanupStaleUsers:', error);
+      logger.error('Error getting presence stats:', error);
+      return {
+        totalOnline: 0,
+        totalUsers: 0,
+        staleUsers: 0
+      };
+    }
+  }
+
+  // Cleanup on service destruction
+  cleanup(): void {
+    this.stopHeartbeat();
+    
+    if (this.cleanupInterval) {
+      clearInterval(this.cleanupInterval);
+      this.cleanupInterval = null;
+    }
+
+    if (this.currentUserId) {
+      this.markOffline(this.currentUserId);
     }
   }
 }
 
 export const presenceService = new PresenceService();
+
+// Cleanup on page unload
+if (typeof window !== 'undefined') {
+  window.addEventListener('beforeunload', () => {
+    presenceService.cleanup();
+  });
+}

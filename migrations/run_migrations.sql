@@ -25,6 +25,24 @@
 -- Migration 005: Realtime
 \i 005_admin_dashboard_realtime.sql
 
+-- Migration 006: Admin Functions (Clean)
+\i 006_admin_functions_clean.sql
+
+-- Migration 007: Version Columns
+\i 007_add_version_columns.sql
+
+-- Migration 008: Audit Log Retention
+\i 008_audit_log_retention.sql
+
+-- Migration 011: Presence Cleanup System
+\i 011_presence_cleanup_system.sql
+
+-- Migration 012: Admin Management Functions
+\i 012_admin_management_functions.sql
+
+-- Migration 013: Emergency Presence Cleanup
+\i 013_emergency_presence_cleanup.sql
+
 -- Insert default site settings
 INSERT INTO public.site_settings (key, value, type) VALUES
 ('adsense_link_1', '', 'string'),
